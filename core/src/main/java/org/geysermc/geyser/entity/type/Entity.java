@@ -34,6 +34,10 @@ import org.checkerframework.checker.nullness.qual.NonNull;
 import org.checkerframework.checker.nullness.qual.Nullable;
 import org.cloudburstmc.math.vector.Vector2f;
 import org.cloudburstmc.math.vector.Vector3f;
+import org.cloudburstmc.protocol.bedrock.codec.v671.Bedrock_v671;
+import org.cloudburstmc.protocol.bedrock.codec.v685.Bedrock_v685;
+import org.cloudburstmc.protocol.bedrock.codec.v766.Bedrock_v766;
+import org.cloudburstmc.protocol.bedrock.codec.v818.Bedrock_v818;
 import org.cloudburstmc.protocol.bedrock.data.entity.EntityDataTypes;
 import org.cloudburstmc.protocol.bedrock.data.entity.EntityEventType;
 import org.cloudburstmc.protocol.bedrock.data.entity.EntityFlag;
@@ -230,16 +234,18 @@ public class Entity implements GeyserEntity {
 
     private String bedrockSpawnIdentifier() {
         String identifier = bedrockDefinition.identifier().toString();
-        if (identifier.equals("minecraft:sulfur_cube") && !GameProtocol.is26_30orHigher(session.protocolVersion())) {
-            return "minecraft:slime";
-        }
-        if (GameProtocol.is1_21_130orHigher(session.protocolVersion())) {
-            return identifier;
-        }
+        int protocol = session.protocolVersion();
         return switch (identifier) {
-            case "minecraft:nautilus", "minecraft:zombie_nautilus" -> "minecraft:squid";
-            case "minecraft:camel_husk" -> "minecraft:camel";
-            case "minecraft:parched" -> "minecraft:skeleton";
+            case "minecraft:armadillo" -> protocol < Bedrock_v671.CODEC.getProtocolVersion() ? "minecraft:turtle" : identifier;
+            case "minecraft:bogged" -> protocol < Bedrock_v685.CODEC.getProtocolVersion() ? "minecraft:skeleton" : identifier;
+            case "minecraft:breeze" -> protocol < Bedrock_v685.CODEC.getProtocolVersion() ? "minecraft:blaze" : identifier;
+            case "minecraft:creaking" -> protocol < Bedrock_v766.CODEC.getProtocolVersion() ? "minecraft:iron_golem" : identifier;
+            case "minecraft:happy_ghast" -> protocol < Bedrock_v818.CODEC.getProtocolVersion() ? "minecraft:ghast" : identifier;
+            case "minecraft:copper_golem" -> GameProtocol.is1_21_110orHigher(protocol) ? identifier : "minecraft:iron_golem";
+            case "minecraft:nautilus", "minecraft:zombie_nautilus" -> GameProtocol.is1_21_130orHigher(protocol) ? identifier : "minecraft:squid";
+            case "minecraft:camel_husk" -> GameProtocol.is1_21_130orHigher(protocol) ? identifier : "minecraft:camel";
+            case "minecraft:parched" -> GameProtocol.is1_21_130orHigher(protocol) ? identifier : "minecraft:skeleton";
+            case "minecraft:sulfur_cube" -> GameProtocol.is26_30orHigher(protocol) ? identifier : "minecraft:slime";
             default -> identifier;
         };
     }

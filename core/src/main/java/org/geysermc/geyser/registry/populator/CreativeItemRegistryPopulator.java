@@ -43,7 +43,6 @@ import org.geysermc.geyser.registry.BlockRegistries;
 import org.geysermc.geyser.registry.type.BlockMappings;
 import org.geysermc.geyser.registry.type.GeyserBedrockBlock;
 import org.geysermc.geyser.util.JsonUtils;
-import org.geysermc.geyser.registry.type.GeyserMappingItem;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -116,7 +115,7 @@ public class CreativeItemRegistryPopulator {
         }
     }
 
-    static void populate(ItemRegistryPopulator.PaletteVersion palette, Map<String, ItemDefinition> definitions, Map<String, GeyserMappingItem> items, BiConsumer<ItemData.Builder, Integer> itemConsumer) {
+    static void populate(ItemRegistryPopulator.PaletteVersion palette, Map<String, ItemDefinition> definitions, BiConsumer<ItemData.Builder, Integer> itemConsumer) {
         GeyserBootstrap bootstrap = GeyserImpl.getInstance().getBootstrap();
 
         // Load creative items
@@ -129,7 +128,7 @@ public class CreativeItemRegistryPopulator {
 
         BlockMappings blockMappings = BlockRegistries.BLOCKS.forVersion(palette.protocolVersion());
         for (JsonElement itemNode : creativeItemEntries) {
-            ItemData.Builder itemBuilder = createItemData((JsonObject) itemNode, items, blockMappings, definitions);
+            ItemData.Builder itemBuilder = createItemData((JsonObject) itemNode, blockMappings, definitions);
             if (itemBuilder == null) {
                 continue;
             }
@@ -141,7 +140,7 @@ public class CreativeItemRegistryPopulator {
         }
     }
 
-    private static ItemData.@Nullable Builder createItemData(JsonObject itemNode, Map<String, GeyserMappingItem> items, BlockMappings blockMappings, Map<String, ItemDefinition> definitions) {
+    private static ItemData.@Nullable Builder createItemData(JsonObject itemNode, BlockMappings blockMappings, Map<String, ItemDefinition> definitions) {
         int count = 1;
         int damage = 0;
         NbtMap tag = null;
@@ -151,26 +150,6 @@ public class CreativeItemRegistryPopulator {
             if (predicate.test(identifier, damage)) {
                 return null;
             }
-        }
-
-        // Attempt to remove items that do not exist in Java (1.21.50 has 1.21.4 items, that don't exist on 1.21.2)
-        // we still add the lodestone compass - we're going to translate it.
-        if (!items.containsKey(identifier) && !identifier.equals("minecraft:lodestone_compass")) {
-            // bedrock identifier not found, let's make sure it's not just different
-            boolean found = false;
-            for (var mapping : items.values()) {
-                if (mapping.getBedrockIdentifier().equals(identifier)) {
-                    found = true;
-                    break;
-                }
-            }
-
-            // TODO this is nice, but has the nasty side-effect of breaking creative categories.
-            // We would need to re-write those to fully remove new items / categories
-//            if (!found) {
-//                GeyserImpl.getInstance().getLogger().debug("Removing item that we don't yet translate: " + identifier);
-//                return null;
-//            }
         }
 
         JsonElement damageNode = itemNode.get("damage");

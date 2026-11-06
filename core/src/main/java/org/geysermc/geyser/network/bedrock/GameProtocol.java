@@ -34,6 +34,7 @@ import org.cloudburstmc.protocol.bedrock.codec.v618.Bedrock_v618;
 import org.cloudburstmc.protocol.bedrock.codec.v662.Bedrock_v662;
 import org.cloudburstmc.protocol.bedrock.codec.v776.Bedrock_v776;
 import org.cloudburstmc.protocol.bedrock.codec.v800.Bedrock_v800;
+import org.cloudburstmc.protocol.bedrock.codec.v827.Bedrock_v827;
 import org.cloudburstmc.protocol.bedrock.codec.v844.Bedrock_v844;
 import org.cloudburstmc.protocol.bedrock.codec.v898.Bedrock_v898;
 import org.cloudburstmc.protocol.bedrock.codec.v924.Bedrock_v924;
@@ -162,6 +163,10 @@ public final class GameProtocol {
 
     public static boolean usesExperimentalRecipeUnlocking(int protocolVersion) {
         return protocolVersion == Bedrock_v594.CODEC.getProtocolVersion();
+    }
+
+    public static boolean usesExperimentalCopperAge(int protocolVersion) {
+        return protocolVersion == Bedrock_v827.CODEC.getProtocolVersion();
     }
 
     public static boolean usesAuthInputFlight(int protocolVersion) {

@@ -27,6 +27,7 @@ package org.geysermc.geyser.network.bedrock;
 
 import io.netty.buffer.Unpooled;
 import org.cloudburstmc.math.vector.Vector2f;
+import org.cloudburstmc.protocol.bedrock.data.ExperimentData;
 import org.cloudburstmc.protocol.bedrock.data.ResourcePackType;
 import org.cloudburstmc.protocol.bedrock.packet.BedrockPacket;
 import org.cloudburstmc.protocol.bedrock.packet.ModalFormResponsePacket;
@@ -171,6 +172,9 @@ public class UpstreamPacketHandler extends LoggingPacketHandler {
                     stackPacket.setForcedToAccept(false); // Leaving this as false allows the player to choose to download or not
                     stackPacket.setGameVersion("*");
                     stackPacket.getResourcePacks().addAll(this.resourcePackLoadEvent.orderedPacks());
+                    if (GameProtocol.usesExperimentalCopperAge(session.protocolVersion())) {
+                        stackPacket.getExperiments().add(new ExperimentData("y_2025_drop_3", true));
+                    }
 
                     session.sendUpstreamPacket(stackPacket);
                 }

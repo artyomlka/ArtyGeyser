@@ -36,6 +36,7 @@ import org.geysermc.geyser.entity.type.Entity;
 import org.geysermc.geyser.entity.type.player.SessionPlayerEntity;
 import org.geysermc.geyser.level.physics.BoundingBox;
 import org.geysermc.geyser.level.physics.CollisionResult;
+import org.geysermc.geyser.network.bedrock.GameProtocol;
 import org.geysermc.geyser.session.GeyserSession;
 import org.geysermc.geyser.text.ChatColor;
 import org.geysermc.geyser.util.MathUtils;
@@ -49,6 +50,7 @@ import org.geysermc.mcprotocollib.protocol.packet.ingame.serverbound.player.Serv
  * Holds processing input coming in from the {@link PlayerAuthInputPacket} packet.
  */
 final class BedrockMovePlayer {
+    private static final int MAX_MOVE_DISTANCE_SQUARED = 300;
 
     static void translate(GeyserSession session, PlayerAuthInputPacket packet) {
         SessionPlayerEntity entity = session.getPlayerEntity();
@@ -112,7 +114,12 @@ final class BedrockMovePlayer {
             entity.setLastTickEndVelocity(Vector3f.from(entity.getLastTickEndVelocity().getX(), 0.2F, entity.getLastTickEndVelocity().getZ()));
         }
 
-        entity.setCollidingVertically(packet.getInputData().contains(PlayerAuthInputData.VERTICAL_COLLISION));
+        boolean collidingVertically = packet.getInputData().contains(PlayerAuthInputData.VERTICAL_COLLISION);
+        if (!collidingVertically && !hasVehicle && !session.isNoClip()
+                && !GameProtocol.hasPredictedVehicleInput(session.protocolVersion()) && entity.getLastTickEndVelocity().getY() < 0) {
+            collidingVertically = hasLegacyGroundSupport(session, packet.getPosition());
+        }
+        entity.setCollidingVertically(collidingVertically);
 
         // Client is telling us it wants to move down, but something is blocking it from doing so.
         boolean isOnGround;
@@ -245,11 +252,28 @@ final class BedrockMovePlayer {
         return Float.isNaN(val) || Float.isInfinite(val);
     }
 
+    private static boolean hasLegacyGroundSupport(GeyserSession session, Vector3f bedrockPosition) {
+        if (!(session.getPlayerEntity().bedrockPosition().distanceSquared(bedrockPosition) <= MAX_MOVE_DISTANCE_SQUARED)) {
+            return false;
+        }
+
+        Vector3f feet = bedrockPosition.down(VanillaEntities.PLAYER_ENTITY_OFFSET);
+        var collisions = session.getCollisionManager();
+        BoundingBox box = collisions.getPlayerBoundingBox().clone();
+        box.setMiddleX(feet.getX());
+        box.setMiddleY(feet.getY() + box.getSizeY() / 2);
+        box.setMiddleZ(feet.getZ());
+        // Early clients can omit VERTICAL_COLLISION. Infer support from a short downward move
+        // against the cached Java geometry at the reported position.
+        Vector3d down = Vector3d.from(0, -0.02, 0);
+        return collisions.correctMovementForCollisions(down, box, true, false).getY() > down.getY();
+    }
+
     private static boolean isValidMove(GeyserSession session, Vector3f currentPosition, Vector3f newPosition) {
         if (isInvalidNumber(newPosition.getX()) || isInvalidNumber(newPosition.getY()) || isInvalidNumber(newPosition.getZ())) {
             return false;
         }
-        if (currentPosition.distanceSquared(newPosition) > 300) {
+        if (currentPosition.distanceSquared(newPosition) > MAX_MOVE_DISTANCE_SQUARED) {
             session.getGeyser().getLogger().debug(ChatColor.RED + session.bedrockUsername() + " moved too quickly." +
                     " current position: " + currentPosition + ", new position: " + newPosition);
 

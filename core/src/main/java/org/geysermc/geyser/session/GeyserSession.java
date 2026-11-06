@@ -2178,6 +2178,9 @@ public class GeyserSession implements GeyserConnection, GeyserCommandSource, Jav
         if (GameProtocol.usesExperimentalRecipeUnlocking(protocolVersion())) {
             startGamePacket.getExperiments().add(new ExperimentData("recipe_unlocking", true));
         }
+        if (GameProtocol.usesExperimentalCopperAge(protocolVersion())) {
+            startGamePacket.getExperiments().add(new ExperimentData("y_2025_drop_3", true));
+        }
     }
 
     private void syncEntityProperties() {
