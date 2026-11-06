@@ -34,6 +34,7 @@ import org.geysermc.geyser.GeyserImpl;
 import org.geysermc.geyser.api.util.Identifier;
 import org.geysermc.geyser.api.waypoint.CustomWaypointStyle;
 import org.geysermc.geyser.entity.type.Entity;
+import org.geysermc.geyser.network.bedrock.GameProtocol;
 import org.geysermc.geyser.session.GeyserSession;
 import org.geysermc.geyser.util.MinecraftKey;
 import org.geysermc.mcprotocollib.protocol.data.game.level.waypoint.TrackedWaypoint;
@@ -59,6 +60,7 @@ public abstract class GeyserWaypoint {
     private final LocatorBarWaypoint bedrockWaypoint;
     private final CustomWaypointStyle style;
     private final Identifier styleIdentifier;
+    private final boolean customIcons;
 
     private Vector3f lastSentPosition = null;
 
@@ -67,6 +69,7 @@ public abstract class GeyserWaypoint {
         this.uuid = uuid;
         this.style = style;
         this.styleIdentifier = styleIdentifier;
+        this.customIcons = GameProtocol.is26_20orHigher(session.protocolVersion());
         this.bedrockWaypoint = new LocatorBarWaypoint();
         bedrockWaypoint.setVisible(true);
         bedrockWaypoint.setColor(color);
@@ -110,6 +113,11 @@ public abstract class GeyserWaypoint {
 
     protected void setPosition(Vector3f position) {
         bedrockWaypoint.setWorldPosition(new LocatorBarWaypoint.WorldPosition(position, session.getBedrockDimension().bedrockId()));
+        if (!customIcons) {
+            bedrockWaypoint.setTextureId(legacyTexture(session.playerEntity().position().distanceSquared(position)));
+            return;
+        }
+
         float distance = session.playerEntity().position().distance(position);
         String texture = style.texturePath(styleIdentifier, distance);
         Vector2f iconSize = style.textureSize(styleIdentifier, distance);
@@ -130,7 +138,8 @@ public abstract class GeyserWaypoint {
         Vector3f position = bedrockWaypoint.getWorldPosition().getPosition();
         if (lastSentPosition == null || position.distanceSquared(lastSentPosition) > 1.0F) {
             LocatorBarPacket packet = new LocatorBarPacket();
-            bedrockWaypoint.setUpdateFlag(WaypointUpdateFlags.WORLD_POS | WaypointUpdateFlags.TEXTURE_PATH | WaypointUpdateFlags.ICON_SIZE);
+            int iconFlags = customIcons ? WaypointUpdateFlags.TEXTURE_PATH | WaypointUpdateFlags.ICON_SIZE : WaypointUpdateFlags.TEXTURE_ID;
+            bedrockWaypoint.setUpdateFlag(WaypointUpdateFlags.WORLD_POS | iconFlags);
             packet.setWaypoints(List.of(new LocatorBarPacket.Payload(LocatorBarPacket.Action.UPDATE, uuid, bedrockWaypoint)));
             session.sendUpstreamPacket(packet);
 
@@ -140,7 +149,8 @@ public abstract class GeyserWaypoint {
 
     private void sendTrackPackets(boolean add) {
         LocatorBarPacket packet = new LocatorBarPacket();
-        bedrockWaypoint.setUpdateFlag(add ? WaypointUpdateFlags.ALL : 0);
+        int flags = customIcons ? WaypointUpdateFlags.ALL : WaypointUpdateFlags.ALL_LEGACY;
+        bedrockWaypoint.setUpdateFlag(add ? flags : 0);
         packet.setWaypoints(List.of(new LocatorBarPacket.Payload(add ? LocatorBarPacket.Action.ADD : LocatorBarPacket.Action.REMOVE, uuid, bedrockWaypoint)));
         session.sendUpstreamPacket(packet);
     }
@@ -161,6 +171,16 @@ public abstract class GeyserWaypoint {
             case CHUNK -> new ChunkWaypoint(session, uuid, style, styleIdentifier, color, entity);
             case AZIMUTH -> new AzimuthWaypoint(session, uuid, style, styleIdentifier, color, entity);
         };
+    }
+
+    private static int legacyTexture(float distanceSquared) {
+        if (distanceSquared < VANILLA_NEAR_DISTANCE_SQUARED) {
+            return 2;
+        }
+        if (distanceSquared >= VANILLA_FAR_DISTANCE_SQUARED) {
+            return 5;
+        }
+        return (int) (3 + Math.floor((distanceSquared - VANILLA_NEAR_DISTANCE_SQUARED) / (VANILLA_FAR_DISTANCE_SQUARED - VANILLA_NEAR_DISTANCE_SQUARED) * 2));
     }
 
     private static Color getWaypointColor(TrackedWaypoint waypoint) {

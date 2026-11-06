@@ -44,6 +44,8 @@ import org.cloudburstmc.nbt.NbtMap;
 import org.cloudburstmc.nbt.NbtMapBuilder;
 import org.cloudburstmc.nbt.NbtType;
 import org.cloudburstmc.nbt.NbtUtils;
+import org.cloudburstmc.protocol.bedrock.codec.v944.Bedrock_v944;
+import org.cloudburstmc.protocol.bedrock.codec.v975.Bedrock_v975;
 import org.cloudburstmc.protocol.bedrock.codec.v1001.Bedrock_v1001;
 import org.cloudburstmc.protocol.bedrock.codec.v2168.Bedrock_v2168;
 import org.cloudburstmc.protocol.bedrock.codec.v2193.Bedrock_v2193;
@@ -62,6 +64,7 @@ import org.geysermc.geyser.level.block.type.FlowerPotBlock;
 import org.geysermc.geyser.registry.BlockRegistries;
 import org.geysermc.geyser.registry.java.BuiltInJavaRegistries;
 import org.geysermc.geyser.registry.populator.conversion.BlockRemapper;
+import org.geysermc.geyser.registry.populator.conversion.ChaosCubedConverter;
 import org.geysermc.geyser.registry.populator.conversion.ICanHasMoreStates;
 import org.geysermc.geyser.registry.type.BlockMappings;
 import org.geysermc.geyser.registry.type.GeyserBedrockBlock;
@@ -123,8 +126,10 @@ public final class BlockRegistryPopulator {
 
     private static void registerBedrockBlocks() {
         ImmutableMap<ObjectIntPair<String>, BlockRemapper> blockMappers = ImmutableMap.<ObjectIntPair<String>, BlockRemapper>builder()
-                .put(ObjectIntPair.of("26_30", Bedrock_v1001.CODEC.getProtocolVersion()), ICanHasMoreStates.Old.INSTANCE)
-                .put(ObjectIntPair.of("26_40", Bedrock_v2168.CODEC.getProtocolVersion()), ICanHasMoreStates.Old.INSTANCE)
+                .put(ObjectIntPair.of("26_10", Bedrock_v944.CODEC.getProtocolVersion()), ChaosCubedConverter.INSTANCE)
+                .put(ObjectIntPair.of("26_20", Bedrock_v975.CODEC.getProtocolVersion()), ChaosCubedConverter.INSTANCE)
+                .put(ObjectIntPair.of("26_30", Bedrock_v1001.CODEC.getProtocolVersion()), ICanHasStates.INSTANCE)
+                .put(ObjectIntPair.of("26_40", Bedrock_v2168.CODEC.getProtocolVersion()), ICanHasStates.INSTANCE)
                 .put(ObjectIntPair.of("26_50", Bedrock_v2193.CODEC.getProtocolVersion()), ICanHasMoreStates.INSTANCE)
                 .put(ObjectIntPair.of("26_60", Bedrock_v2225.CODEC.getProtocolVersion()), tag -> tag)
             .build();

@@ -36,6 +36,7 @@ public final class WaypointUpdateFlags {
     public static final int CLIENT_POSITION_AUTHORITY = 1 << 4;
     public static final int CLIENT_POSITION_AUTHORITY_NEW = 1 << 5;
     public static final int ALL = 0b111111;
+    public static final int ALL_LEGACY = 0b11111;
 
     private WaypointUpdateFlags() {}
 }

@@ -32,6 +32,7 @@ import org.cloudburstmc.protocol.bedrock.codec.BedrockCodecHelper;
 import org.cloudburstmc.protocol.bedrock.codec.BedrockPacketDefinition;
 import org.cloudburstmc.protocol.bedrock.codec.BedrockPacketSerializer;
 import org.cloudburstmc.protocol.bedrock.codec.v2168.Bedrock_v2168;
+import org.cloudburstmc.protocol.bedrock.codec.v291.serializer.MobEquipmentSerializer_v291;
 import org.cloudburstmc.protocol.bedrock.codec.v975.serializer.MobEquipmentSerializer_v975;
 import org.cloudburstmc.protocol.bedrock.packet.AnvilDamagePacket;
 import org.cloudburstmc.protocol.bedrock.packet.BedrockPacket;
@@ -129,6 +130,25 @@ public class CodecProcessor {
         }
     };
 
+    private static final BedrockPacketSerializer<MobEquipmentPacket> LEGACY_MOB_EQUIPMENT_SERIALIZER = new MobEquipmentSerializer_v291() {
+        @Override
+        public void deserialize(ByteBuf buffer, BedrockCodecHelper helper, MobEquipmentPacket packet) {
+            packet.setRuntimeEntityId(VarInts.readUnsignedLong(buffer));
+            if (VarInts.readInt(buffer) != 0) { // runtime ID, zero for air
+                buffer.skipBytes(2); // count
+                VarInts.readUnsignedInt(buffer); // damage
+                if (buffer.readBoolean()) {
+                    VarInts.readInt(buffer); // net ID
+                }
+                VarInts.readInt(buffer); // block runtime ID
+                buffer.skipBytes(VarInts.readUnsignedInt(buffer)); // item user data
+            }
+            packet.setInventorySlot(buffer.readUnsignedByte());
+            packet.setHotbarSlot(buffer.readUnsignedByte());
+            packet.setContainerId(buffer.readByte());
+        }
+    };
+
     public static void updateCodec(UpstreamSession upstreamSession, String version) {
         // The 26.44 hotfix changed serializers without changing its protocol ID.
         if (upstreamSession.getProtocolVersion() == Bedrock_v2168.CODEC.getProtocolVersion()) {
@@ -179,7 +199,8 @@ public class CodecProcessor {
             .updateSerializer(MultiplayerSettingsPacket.class, IGNORED_SERIALIZER)
             .updateSerializer(EmoteListPacket.class, IGNORED_SERIALIZER)
             // Skips over unused fields in the 26.20+ item descriptor
-            .updateSerializer(MobEquipmentPacket.class, MOB_EQUIPMENT_SERIALIZER);
+            .updateSerializer(MobEquipmentPacket.class, GameProtocol.is26_20orHigher(codec.getProtocolVersion())
+                ? MOB_EQUIPMENT_SERIALIZER : LEGACY_MOB_EQUIPMENT_SERIALIZER);
 
         // Keep the codec's serializer on the wire for server-to-client packets.
         ignoreServerbound(codec, codecBuilder, PlayerHotbarPacket.class);
