@@ -163,6 +163,7 @@ import org.geysermc.geyser.level.BedrockDimension;
 import org.geysermc.geyser.level.JavaDimension;
 import org.geysermc.geyser.level.gamerule.GameRuleHandler;
 import org.geysermc.geyser.level.physics.CollisionManager;
+import org.geysermc.geyser.network.bedrock.GameProtocol;
 import org.geysermc.geyser.network.java.LocalSession;
 import org.geysermc.geyser.registry.Registries;
 import org.geysermc.geyser.registry.java.JavaRegistries;
@@ -2051,7 +2052,7 @@ public class GeyserSession implements GeyserConnection, GeyserCommandSource, Jav
         startGamePacket.setUniqueEntityId(playerEntity.geyserId());
         startGamePacket.setRuntimeEntityId(playerEntity.geyserId());
         GameType gameType = EntityUtils.toBedrockGamemode(gameMode);
-        if (gameType == GameType.SURVIVAL_VIEWER) {
+        if (gameType == GameType.SURVIVAL_VIEWER && GameProtocol.is26_40orHigher(this.protocolVersion())) {
             gameType = GameType.SURVIVAL;
             pendingSpectator = true;
         }

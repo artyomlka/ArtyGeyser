@@ -33,7 +33,6 @@ import org.cloudburstmc.nbt.NbtMap;
 public class ICanHasMoreStates implements BlockRemapper {
     public static final ICanHasMoreStates INSTANCE = new ICanHasMoreStates();
 
-    @Override
     public NbtMap remapBlock(NbtMap tag) {
         String name = tag.getString("name");
         return switch (name) {
@@ -48,5 +47,14 @@ public class ICanHasMoreStates implements BlockRemapper {
                 "redstone_east", "redstone_south", "redstone_west");
             default -> tag;
         };
+    }
+
+    public static class Old extends ICanHasMoreStates {
+        private static final WildernessBoundConverter PARENT = new WildernessBoundConverter();
+
+        @Override
+        public NbtMap remapBlock(NbtMap tag) {
+            return PARENT.remapBlock(super.remapBlock(tag));
+        }
     }
 }

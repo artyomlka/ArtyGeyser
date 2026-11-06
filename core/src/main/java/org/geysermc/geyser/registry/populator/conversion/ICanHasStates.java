@@ -31,13 +31,10 @@ import org.cloudburstmc.nbt.NbtMap;
  * Har har funny icanhasbukkit reference, this class actually downgrades the palette for versions below 26.50,
  * as that version introduced new states for stairs and fences (server controlled now, wooo!)
  */
-public class ICanHasStates extends WildernessBoundConverter {
+public class ICanHasStates implements BlockRemapper {
     public static final ICanHasStates INSTANCE = new ICanHasStates();
 
-    @Override
     public NbtMap remapBlock(NbtMap tag) {
-        tag = super.remapBlock(tag);
-
         String name = tag.getString("name");
         if (name.contains("_stairs")) {
             return ConversionHelper.removeStates(tag, "minecraft:corner");

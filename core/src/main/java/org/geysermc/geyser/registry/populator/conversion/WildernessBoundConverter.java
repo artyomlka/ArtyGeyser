@@ -36,7 +36,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public class WildernessBoundConverter extends ICanHasMoreStates {
+public class WildernessBoundConverter extends ICanHasStates {
     public static final WildernessBoundConverter INSTANCE = new WildernessBoundConverter();
 
     private static final Map<String, String> BLOCK_MAPPINGS = new HashMap<>();
@@ -227,10 +227,7 @@ public class WildernessBoundConverter extends ICanHasMoreStates {
         addItem(Items.BLACK_CUSHION, Items.BLACK_CARPET);
     }
 
-    @Override
     public NbtMap remapBlock(NbtMap tag) {
-        tag = super.remapBlock(tag);
-
         String replacement = BLOCK_MAPPINGS.get(tag.getString("name"));
         if (replacement != null) {
             if (CLEAR_BLOCK_STATES.contains(tag.getString("name"))) {

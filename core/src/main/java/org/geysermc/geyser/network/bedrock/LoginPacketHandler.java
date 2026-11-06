@@ -153,6 +153,11 @@ public class LoginPacketHandler extends LoggingPacketHandler {
             return PacketSignal.HANDLED;
         }
 
+        if (loginPacket.getProtocolVersion() != session.getUpstream().getProtocolVersion()) {
+            session.disconnect("Login protocol differs from the negotiated protocol!");
+            return PacketSignal.HANDLED;
+        }
+
         stage = Stage.DONE;
         loginProtocolVersion = loginPacket.getProtocolVersion();
 
