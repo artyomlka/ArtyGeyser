@@ -83,12 +83,15 @@ import org.geysermc.geyser.item.exception.InvalidItemComponentsException;
 import org.geysermc.geyser.item.type.BlockItem;
 import org.geysermc.geyser.item.type.Item;
 import org.geysermc.geyser.level.block.property.Properties;
+import org.geysermc.geyser.network.bedrock.GameProtocol;
+import org.geysermc.geyser.network.bedrock.LegacyBedrockProfile;
 import org.geysermc.geyser.registry.BlockRegistries;
 import org.geysermc.geyser.registry.Registries;
 import org.geysermc.geyser.registry.java.BuiltInJavaRegistries;
 import org.geysermc.geyser.registry.populator.conversion.ItemRemapper;
 import org.geysermc.geyser.registry.populator.conversion.ChaosCubedConverter;
 import org.geysermc.geyser.registry.populator.conversion.GoldenDandelionConverter;
+import org.geysermc.geyser.registry.populator.conversion.MountsOfMayhemConverter;
 import org.geysermc.geyser.registry.populator.conversion.WildernessBoundConverter;
 import org.geysermc.geyser.registry.type.BlockMappings;
 import org.geysermc.geyser.registry.type.CustomSkull;
@@ -153,8 +156,15 @@ public class ItemRegistryPopulator {
     // TODO: ideally split the populating of the Java ITEM registry (non-vanilla items) from the populating of item mappings
     public static void populate() {
         Map<Item, Item> preChaosCubedItems = ChaosCubedConverter.itemMappings();
-        List<PaletteVersion> paletteVersions = new ArrayList<>(7);
-        paletteVersions.add(new PaletteVersion("26_0", Bedrock_v924.CODEC.getProtocolVersion(), GoldenDandelionConverter.itemMappings()));
+        Map<Item, Item> preGoldenDandelionItems = GoldenDandelionConverter.itemMappings();
+        Map<Item, Item> preMountsOfMayhemItems = MountsOfMayhemConverter.itemMappings(preGoldenDandelionItems);
+        List<PaletteVersion> paletteVersions = new ArrayList<>(7 + LegacyBedrockProfile.PROFILES.size());
+        for (LegacyBedrockProfile profile : LegacyBedrockProfile.PROFILES) {
+            Map<Item, Item> replacements = GameProtocol.is1_21_130orHigher(profile.protocolVersion())
+                ? preGoldenDandelionItems : preMountsOfMayhemItems;
+            paletteVersions.add(new PaletteVersion(profile.itemPalette(), profile.protocolVersion(), replacements));
+        }
+        paletteVersions.add(new PaletteVersion("26_0", Bedrock_v924.CODEC.getProtocolVersion(), preGoldenDandelionItems));
         paletteVersions.add(new PaletteVersion("26_10", Bedrock_v944.CODEC.getProtocolVersion(), preChaosCubedItems));
         paletteVersions.add(new PaletteVersion("26_20", Bedrock_v975.CODEC.getProtocolVersion(), preChaosCubedItems, "26_10"));
         paletteVersions.add(new PaletteVersion("26_30", Bedrock_v1001.CODEC.getProtocolVersion(), WildernessBoundConverter.itemMappings()));

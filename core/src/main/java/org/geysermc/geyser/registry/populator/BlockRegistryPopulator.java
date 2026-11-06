@@ -62,6 +62,7 @@ import org.geysermc.geyser.level.block.property.Properties;
 import org.geysermc.geyser.level.block.type.Block;
 import org.geysermc.geyser.level.block.type.BlockState;
 import org.geysermc.geyser.level.block.type.FlowerPotBlock;
+import org.geysermc.geyser.network.bedrock.LegacyBedrockProfile;
 import org.geysermc.geyser.registry.BlockRegistries;
 import org.geysermc.geyser.registry.java.BuiltInJavaRegistries;
 import org.geysermc.geyser.registry.populator.conversion.BlockRemapper;
@@ -127,7 +128,11 @@ public final class BlockRegistryPopulator {
     }
 
     private static void registerBedrockBlocks() {
-        ImmutableMap<ObjectIntPair<String>, BlockRemapper> blockMappers = ImmutableMap.<ObjectIntPair<String>, BlockRemapper>builder()
+        var mappers = ImmutableMap.<ObjectIntPair<String>, BlockRemapper>builder();
+        for (LegacyBedrockProfile profile : LegacyBedrockProfile.PROFILES) {
+            mappers.put(ObjectIntPair.of(profile.blockPalette(), profile.protocolVersion()), GoldenDandelionConverter.INSTANCE);
+        }
+        var blockMappers = mappers
                 .put(ObjectIntPair.of("26_0", Bedrock_v924.CODEC.getProtocolVersion()), GoldenDandelionConverter.INSTANCE)
                 .put(ObjectIntPair.of("26_10", Bedrock_v944.CODEC.getProtocolVersion()), ChaosCubedConverter.INSTANCE)
                 .put(ObjectIntPair.of("26_20", Bedrock_v975.CODEC.getProtocolVersion()), ChaosCubedConverter.INSTANCE)

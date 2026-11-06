@@ -43,6 +43,7 @@ import org.cloudburstmc.protocol.bedrock.codec.v2225.Bedrock_v2225;
 import org.geysermc.geyser.GeyserBootstrap;
 import org.geysermc.geyser.GeyserImpl;
 import org.geysermc.geyser.item.type.Item;
+import org.geysermc.geyser.network.bedrock.LegacyBedrockProfile;
 import org.geysermc.geyser.registry.Registries;
 import org.geysermc.geyser.registry.java.BuiltInJavaRegistries;
 import org.geysermc.geyser.registry.type.ItemMapping;
@@ -52,6 +53,7 @@ import org.geysermc.geyser.util.MinecraftKey;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.lang.reflect.Type;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
@@ -74,7 +76,11 @@ public final class TagRegistryPopulator {
             }
         };
 
-        List<ObjectIntPair<String>> paletteVersions = List.of(
+        List<ObjectIntPair<String>> paletteVersions = new ArrayList<>();
+        for (LegacyBedrockProfile profile : LegacyBedrockProfile.PROFILES) {
+            paletteVersions.add(ObjectIntPair.of(profile.itemTags(), profile.protocolVersion()));
+        }
+        paletteVersions.addAll(List.of(
             ObjectIntPair.of("26_0", Bedrock_v924.CODEC.getProtocolVersion()),
             ObjectIntPair.of("26_10", Bedrock_v944.CODEC.getProtocolVersion()),
             ObjectIntPair.of("26_20", Bedrock_v975.CODEC.getProtocolVersion()),
@@ -82,7 +88,7 @@ public final class TagRegistryPopulator {
             ObjectIntPair.of("26_30", Bedrock_v2168.CODEC.getProtocolVersion()),
             ObjectIntPair.of("26_30", Bedrock_v2193.CODEC.getProtocolVersion()),
             ObjectIntPair.of("26_30", Bedrock_v2225.CODEC.getProtocolVersion())
-        );
+        ));
         Type type = new TypeToken<Map<String, List<String>>>() {}.getType();
 
         GeyserBootstrap bootstrap = GeyserImpl.getInstance().getBootstrap();

@@ -29,6 +29,7 @@ import it.unimi.dsi.fastutil.ints.IntArrayList;
 import it.unimi.dsi.fastutil.ints.IntList;
 import org.checkerframework.checker.nullness.qual.Nullable;
 import org.cloudburstmc.protocol.bedrock.codec.BedrockCodec;
+import org.cloudburstmc.protocol.bedrock.codec.v898.Bedrock_v898;
 import org.cloudburstmc.protocol.bedrock.codec.v924.Bedrock_v924;
 import org.cloudburstmc.protocol.bedrock.codec.v944.Bedrock_v944;
 import org.cloudburstmc.protocol.bedrock.codec.v975.Bedrock_v975;
@@ -87,10 +88,13 @@ public final class GameProtocol {
 
     static {
         // Strict ordering
+        for (LegacyBedrockProfile profile : LegacyBedrockProfile.PROFILES) {
+            register(profile.codec(), profile.versions().toArray(String[]::new));
+        }
         register(Bedrock_v924.CODEC, "26.0", "26.1", "26.2", "26.3");
         register(Bedrock_v944.CODEC, "26.10", "26.11", "26.12", "26.13");
         register(Bedrock_v975.CODEC, "26.20", "26.21", "26.22", "26.23");
-        register(Bedrock_v1001.CODEC, "26.30", "26.31", "26.32", "26.33", "26.34");
+        register(Bedrock_v1001.CODEC, "26.30", "26.31", "26.32", "26.33", "26.34", "26.35");
         register(Bedrock_v2168_hotfix4.CODEC, "26.40", "26.41", "26.42", "26.43", "26.44");
         register(Bedrock_v2169.CODEC, "26.45");
         register(Bedrock_v2193.CODEC, "26.50", "26.51", "26.52");
@@ -145,6 +149,10 @@ public final class GameProtocol {
     }
 
     /* Bedrock convenience methods to gatekeep features and easily remove the check on version removal */
+
+    public static boolean is1_21_130orHigher(int protocolVersion) {
+        return protocolVersion >= Bedrock_v898.CODEC.getProtocolVersion();
+    }
 
     public static boolean is26_10orHigher(int protocolVersion) {
         return protocolVersion >= Bedrock_v944.CODEC.getProtocolVersion();

@@ -65,6 +65,7 @@ import org.geysermc.geyser.item.Items;
 import org.geysermc.geyser.item.type.Item;
 import org.geysermc.geyser.level.physics.BoundingBox;
 import org.geysermc.geyser.scoreboard.Team;
+import org.geysermc.geyser.network.bedrock.GameProtocol;
 import org.geysermc.geyser.session.GeyserSession;
 import org.geysermc.geyser.translator.text.MessageTranslator;
 import org.geysermc.geyser.util.ChunkUtils;
@@ -227,9 +228,25 @@ public class Entity implements GeyserEntity {
         setFlag(EntityFlag.SILENT, true);
     }
 
+    private String bedrockSpawnIdentifier() {
+        String identifier = bedrockDefinition.identifier().toString();
+        if (identifier.equals("minecraft:sulfur_cube") && !GameProtocol.is26_30orHigher(session.protocolVersion())) {
+            return "minecraft:slime";
+        }
+        if (GameProtocol.is1_21_130orHigher(session.protocolVersion())) {
+            return identifier;
+        }
+        return switch (identifier) {
+            case "minecraft:nautilus", "minecraft:zombie_nautilus" -> "minecraft:squid";
+            case "minecraft:camel_husk" -> "minecraft:camel";
+            case "minecraft:parched" -> "minecraft:skeleton";
+            default -> identifier;
+        };
+    }
+
     public void spawnEntity() {
         AddEntityPacket addEntityPacket = new AddEntityPacket();
-        addEntityPacket.setIdentifier(bedrockDefinition.identifier().toString());
+        addEntityPacket.setIdentifier(bedrockSpawnIdentifier());
         addEntityPacket.setRuntimeEntityId(geyserId);
         addEntityPacket.setUniqueEntityId(geyserId);
         addEntityPacket.setPosition(spawnPosition(bedrockPosition()));
