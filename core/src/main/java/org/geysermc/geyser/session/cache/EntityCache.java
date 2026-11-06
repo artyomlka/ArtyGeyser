@@ -121,7 +121,9 @@ public class EntityCache {
                 tickableEntities.add((Tickable) entity);
             }
 
-            session.getWaypointCache().addEntity(entity);
+            if (GeyserWaypoint.uses26_10WaypointPacket(session)) {
+                session.getWaypointCache().addEntity(entity);
+            }
         }
     }
 
@@ -200,7 +202,9 @@ public class EntityCache {
             tickableEntities.remove(entity);
         }
 
-        session.getWaypointCache().removeEntity(entity);
+        if (GeyserWaypoint.uses26_10WaypointPacket(session)) {
+            session.getWaypointCache().removeEntity(entity);
+        }
 
         dirtyEntities.remove(entity);
     }

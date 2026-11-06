@@ -125,6 +125,8 @@ public final class ChaosCubedConverter implements BlockRemapper {
 
     public static Map<Item, Item> itemMappings() {
         Map<Item, Item> mappings = new HashMap<>(WildernessBoundConverter.itemMappings());
+        // Some Wilderness Bound fallbacks are themselves newer than this palette.
+        mappings.replaceAll((item, replacement) -> ITEM_MAPPINGS.getOrDefault(replacement, replacement));
         mappings.putAll(ITEM_MAPPINGS);
         return mappings;
     }

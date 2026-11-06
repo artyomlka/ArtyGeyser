@@ -1034,7 +1034,7 @@ public class GeyserSession implements GeyserConnection, GeyserCommandSource, Jav
 
         // On bedrock 26.10 and above, the client only shows the locator bar when there are
         // waypoints on it, so we're fine doing this
-        gamerulePacket.getGameRules().add(new GameRuleData<>("locatorBar", true));
+        gamerulePacket.getGameRules().add(new GameRuleData<>("locatorBar", GameProtocol.is26_10orHigher(protocolVersion())));
 
         upstream.sendPacket(gamerulePacket);
     }
@@ -2038,10 +2038,12 @@ public class GeyserSession implements GeyserConnection, GeyserCommandSource, Jav
         )));
         upstream.sendPacket(jigsawStructureDataPacket);
 
-        VoxelShapesPacket voxelShapesPacket = new VoxelShapesPacket();
-        voxelShapesPacket.setNameMap(new HashMap<>());
-        voxelShapesPacket.setShapes(new ArrayList<>());
-        upstream.sendPacket(voxelShapesPacket);
+        if (GameProtocol.is26_20orHigher(protocolVersion())) {
+            VoxelShapesPacket voxelShapesPacket = new VoxelShapesPacket();
+            voxelShapesPacket.setNameMap(new HashMap<>());
+            voxelShapesPacket.setShapes(new ArrayList<>());
+            upstream.sendPacket(voxelShapesPacket);
+        }
 
         StartGamePacket startGamePacket = buildStartGamePacket();
         configureExperiments(startGamePacket);

@@ -225,7 +225,9 @@ public class CodecProcessor {
         if (!legacyReceiptPackets && !Boolean.getBoolean("Geyser.PartneredServerPackets")) {
             codecBuilder.updateSerializer(RefreshEntitlementsPacket.class, IGNORED_SERIALIZER);
             codecBuilder.updateSerializer(PurchaseReceiptPacket.class, IGNORED_SERIALIZER);
-            codecBuilder.updateSerializer(PartyChangedPacket.class, IGNORED_SERIALIZER);
+            if (GameProtocol.is26_10orHigher(codec.getProtocolVersion())) {
+                codecBuilder.updateSerializer(PartyChangedPacket.class, IGNORED_SERIALIZER);
+            }
 
             // Added in 26.60
             if (GameProtocol.is26_60orHigher(codec.getProtocolVersion())) {

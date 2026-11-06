@@ -30,6 +30,7 @@ import org.cloudburstmc.protocol.bedrock.packet.PlayerListPacket;
 import org.geysermc.api.util.BedrockPlatform;
 import org.geysermc.geyser.GeyserImpl;
 import org.geysermc.geyser.entity.type.player.AvatarEntity;
+import org.geysermc.geyser.network.bedrock.GameProtocol;
 import org.geysermc.geyser.session.GeyserSession;
 
 import java.awt.*;
@@ -111,9 +112,11 @@ public class PlayerListUtils {
         entry.setPlatformChatId("");
         entry.setTeacher(false);
         entry.setTrustedSkin(true);
-        // Unused since waypoint colours are sent via the waypoint packet, but still sent over the network
-        // Thanks Bedrock (last tested as of 26.50)
-        entry.setColor(Color.LIGHT_GRAY);
+        if (GameProtocol.is26_10orHigher(session.protocolVersion())) {
+            entry.setColor(Color.LIGHT_GRAY);
+        } else {
+            entry.setColor(session.getWaypointCache().getWaypointColor(uuid).orElse(Color.WHITE));
+        }
         return entry;
     }
 

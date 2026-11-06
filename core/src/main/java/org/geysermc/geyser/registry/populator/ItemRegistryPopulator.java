@@ -41,10 +41,10 @@ import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import it.unimi.dsi.fastutil.objects.ObjectOpenHashSet;
 import net.kyori.adventure.key.Key;
-import org.checkerframework.checker.nullness.qual.NonNull;
 import org.cloudburstmc.nbt.NbtMap;
 import org.cloudburstmc.nbt.NbtMapBuilder;
 import org.cloudburstmc.nbt.NbtUtils;
+import org.cloudburstmc.protocol.bedrock.codec.v924.Bedrock_v924;
 import org.cloudburstmc.protocol.bedrock.codec.v944.Bedrock_v944;
 import org.cloudburstmc.protocol.bedrock.codec.v975.Bedrock_v975;
 import org.cloudburstmc.protocol.bedrock.codec.v1001.Bedrock_v1001;
@@ -88,6 +88,7 @@ import org.geysermc.geyser.registry.Registries;
 import org.geysermc.geyser.registry.java.BuiltInJavaRegistries;
 import org.geysermc.geyser.registry.populator.conversion.ItemRemapper;
 import org.geysermc.geyser.registry.populator.conversion.ChaosCubedConverter;
+import org.geysermc.geyser.registry.populator.conversion.GoldenDandelionConverter;
 import org.geysermc.geyser.registry.populator.conversion.WildernessBoundConverter;
 import org.geysermc.geyser.registry.type.BlockMappings;
 import org.geysermc.geyser.registry.type.CustomSkull;
@@ -152,7 +153,8 @@ public class ItemRegistryPopulator {
     // TODO: ideally split the populating of the Java ITEM registry (non-vanilla items) from the populating of item mappings
     public static void populate() {
         Map<Item, Item> preChaosCubedItems = ChaosCubedConverter.itemMappings();
-        List<PaletteVersion> paletteVersions = new ArrayList<>(6);
+        List<PaletteVersion> paletteVersions = new ArrayList<>(7);
+        paletteVersions.add(new PaletteVersion("26_0", Bedrock_v924.CODEC.getProtocolVersion(), GoldenDandelionConverter.itemMappings()));
         paletteVersions.add(new PaletteVersion("26_10", Bedrock_v944.CODEC.getProtocolVersion(), preChaosCubedItems));
         paletteVersions.add(new PaletteVersion("26_20", Bedrock_v975.CODEC.getProtocolVersion(), preChaosCubedItems, "26_10"));
         paletteVersions.add(new PaletteVersion("26_30", Bedrock_v1001.CODEC.getProtocolVersion(), WildernessBoundConverter.itemMappings()));
