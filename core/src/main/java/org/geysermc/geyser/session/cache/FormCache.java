@@ -25,6 +25,11 @@
 
 package org.geysermc.geyser.session.cache;
 
+import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonNull;
+import com.google.gson.JsonParseException;
+import com.google.gson.JsonParser;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 import lombok.RequiredArgsConstructor;
@@ -33,11 +38,15 @@ import org.cloudburstmc.protocol.bedrock.packet.ClientboundCloseFormPacket;
 import org.cloudburstmc.protocol.bedrock.packet.ModalFormRequestPacket;
 import org.cloudburstmc.protocol.bedrock.packet.ModalFormResponsePacket;
 import org.cloudburstmc.protocol.bedrock.packet.UpdateAttributesPacket;
+import org.geysermc.cumulus.component.Component;
+import org.geysermc.cumulus.component.util.ComponentType;
+import org.geysermc.cumulus.form.CustomForm;
 import org.geysermc.cumulus.form.Form;
 import org.geysermc.cumulus.form.SimpleForm;
 import org.geysermc.cumulus.form.impl.FormDefinitions;
 import org.geysermc.geyser.GeyserImpl;
 import org.geysermc.geyser.entity.attribute.GeyserAttributeType;
+import org.geysermc.geyser.network.bedrock.GameProtocol;
 import org.geysermc.geyser.session.GeyserSession;
 
 import java.util.Collections;
@@ -155,11 +164,62 @@ public class FormCache {
         }
 
         try {
-            formDefinitions.definitionFor(form)
-                    .handleFormResponse(form, response.getFormData());
+            String formData = response.getFormData();
+            if (form instanceof CustomForm customForm && response.getCancelReason().isEmpty()
+                    && GameProtocol.omitsCustomFormLabelResponses(session.protocolVersion())) {
+                formData = restoreCustomFormLabels(customForm, formData);
+            }
+            formDefinitions.definitionFor(form).handleFormResponse(form, formData);
         } catch (Exception e) {
             GeyserImpl.getInstance().getLogger().error("Error while processing form response!", e);
         }
+    }
+
+    private static String restoreCustomFormLabels(CustomForm form, String formData) {
+        if (formData == null || formData.isBlank()) {
+            return formData;
+        }
+
+        int labelCount = 0;
+        int valueCount = 0;
+        for (Component component : form.content()) {
+            if (component != null) {
+                if (component.type() == ComponentType.LABEL) {
+                    labelCount++;
+                } else {
+                    valueCount++;
+                }
+            }
+        }
+        if (labelCount == 0) {
+            return formData;
+        }
+
+        JsonElement parsed;
+        try {
+            parsed = JsonParser.parseString(formData);
+        } catch (JsonParseException ignored) {
+            return formData;
+        }
+
+        // Bedrock 1.21.70 omits the null entries for labels, which Cumulus expects in the response.
+        JsonArray values;
+        if (parsed.isJsonArray() && parsed.getAsJsonArray().size() == valueCount) {
+            values = parsed.getAsJsonArray();
+        } else if (parsed.isJsonNull() && valueCount == 0) {
+            values = new JsonArray();
+        } else {
+            return formData;
+        }
+
+        JsonArray restored = new JsonArray(labelCount + valueCount);
+        int valueIndex = 0;
+        for (Component component : form.content()) {
+            if (component != null) {
+                restored.add(component.type() == ComponentType.LABEL ? JsonNull.INSTANCE : values.get(valueIndex++));
+            }
+        }
+        return restored.toString();
     }
 
     public void closeForms() {
