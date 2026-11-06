@@ -71,6 +71,7 @@ import org.geysermc.geyser.registry.populator.conversion.BlockRemapper;
 import org.geysermc.geyser.registry.populator.conversion.ChaosCubedConverter;
 import org.geysermc.geyser.registry.populator.conversion.GoldenDandelionConverter;
 import org.geysermc.geyser.registry.populator.conversion.ICanHasMoreStates;
+import org.geysermc.geyser.registry.populator.conversion.ICanHasStates;
 import org.geysermc.geyser.registry.type.BlockMappings;
 import org.geysermc.geyser.registry.type.GeyserBedrockBlock;
 import org.geysermc.geyser.util.JsonUtils;
