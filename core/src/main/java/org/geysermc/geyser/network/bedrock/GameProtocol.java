@@ -29,6 +29,12 @@ import it.unimi.dsi.fastutil.ints.IntArrayList;
 import it.unimi.dsi.fastutil.ints.IntList;
 import org.checkerframework.checker.nullness.qual.Nullable;
 import org.cloudburstmc.protocol.bedrock.codec.BedrockCodec;
+import org.cloudburstmc.protocol.bedrock.codec.v594.Bedrock_v594;
+import org.cloudburstmc.protocol.bedrock.codec.v618.Bedrock_v618;
+import org.cloudburstmc.protocol.bedrock.codec.v662.Bedrock_v662;
+import org.cloudburstmc.protocol.bedrock.codec.v776.Bedrock_v776;
+import org.cloudburstmc.protocol.bedrock.codec.v800.Bedrock_v800;
+import org.cloudburstmc.protocol.bedrock.codec.v844.Bedrock_v844;
 import org.cloudburstmc.protocol.bedrock.codec.v898.Bedrock_v898;
 import org.cloudburstmc.protocol.bedrock.codec.v924.Bedrock_v924;
 import org.cloudburstmc.protocol.bedrock.codec.v944.Bedrock_v944;
@@ -149,6 +155,34 @@ public final class GameProtocol {
     }
 
     /* Bedrock convenience methods to gatekeep features and easily remove the check on version removal */
+
+    public static boolean supportsRecipeUnlocking(int protocolVersion) {
+        return protocolVersion >= Bedrock_v594.CODEC.getProtocolVersion();
+    }
+
+    public static boolean usesExperimentalRecipeUnlocking(int protocolVersion) {
+        return protocolVersion == Bedrock_v594.CODEC.getProtocolVersion();
+    }
+
+    public static boolean usesAuthInputFlight(int protocolVersion) {
+        return protocolVersion >= Bedrock_v618.CODEC.getProtocolVersion();
+    }
+
+    public static boolean hasPredictedVehicleInput(int protocolVersion) {
+        return protocolVersion >= Bedrock_v662.CODEC.getProtocolVersion();
+    }
+
+    public static boolean is1_21_60orHigher(int protocolVersion) {
+        return protocolVersion >= Bedrock_v776.CODEC.getProtocolVersion();
+    }
+
+    public static boolean is1_21_80orHigher(int protocolVersion) {
+        return protocolVersion >= Bedrock_v800.CODEC.getProtocolVersion();
+    }
+
+    public static boolean is1_21_110orHigher(int protocolVersion) {
+        return protocolVersion >= Bedrock_v844.CODEC.getProtocolVersion();
+    }
 
     public static boolean is1_21_130orHigher(int protocolVersion) {
         return protocolVersion >= Bedrock_v898.CODEC.getProtocolVersion();

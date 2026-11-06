@@ -26,6 +26,7 @@
 package org.geysermc.geyser.translator.protocol.java;
 
 import org.cloudburstmc.protocol.bedrock.packet.UnlockedRecipesPacket;
+import org.geysermc.geyser.network.bedrock.GameProtocol;
 import org.geysermc.geyser.session.GeyserSession;
 import org.geysermc.geyser.translator.protocol.PacketTranslator;
 import org.geysermc.geyser.translator.protocol.Translator;
@@ -40,7 +41,7 @@ public class JavaRecipeBookRemoveTranslator extends PacketTranslator<Clientbound
     @Override
     public void translate(GeyserSession session, ClientboundRecipeBookRemovePacket packet) {
         List<String> recipes = getBedrockRecipes(session, packet.getRecipes());
-        if (recipes.isEmpty()) {
+        if (recipes.isEmpty() || !GameProtocol.supportsRecipeUnlocking(session.protocolVersion())) {
             // Sending an empty list here will crash the client as of 1.20.60
             return;
         }

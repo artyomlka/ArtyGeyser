@@ -223,7 +223,9 @@ public class CodecProcessor {
         }
 
         if (!legacyReceiptPackets && !Boolean.getBoolean("Geyser.PartneredServerPackets")) {
-            codecBuilder.updateSerializer(RefreshEntitlementsPacket.class, IGNORED_SERIALIZER);
+            if (codec.getPacketDefinition(RefreshEntitlementsPacket.class) != null) {
+                codecBuilder.updateSerializer(RefreshEntitlementsPacket.class, IGNORED_SERIALIZER);
+            }
             codecBuilder.updateSerializer(PurchaseReceiptPacket.class, IGNORED_SERIALIZER);
             if (GameProtocol.is26_10orHigher(codec.getProtocolVersion())) {
                 codecBuilder.updateSerializer(PartyChangedPacket.class, IGNORED_SERIALIZER);
@@ -236,7 +238,8 @@ public class CodecProcessor {
             }
         }
 
-        return codecBuilder.build();
+        BedrockCodec processed = codecBuilder.build();
+        return GameProtocol.is26_40orHigher(codec.getProtocolVersion()) ? processed : LegacyEntityMetadata.apply(processed);
     }
 
     private static <T extends BedrockPacket> void ignoreServerbound(

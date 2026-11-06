@@ -135,6 +135,9 @@ public class FireworkEntity extends ProjectileEntity {
     }
 
     private void sendElytraBoost(int duration) {
+        if (!session.supportsBedrockPacket(MovementEffectPacket.class)) {
+            return;
+        }
         MovementEffectPacket movementEffect = new MovementEffectPacket();
         movementEffect.setDuration(duration);
         movementEffect.setEffectType(MovementEffectType.GLIDE_BOOST);

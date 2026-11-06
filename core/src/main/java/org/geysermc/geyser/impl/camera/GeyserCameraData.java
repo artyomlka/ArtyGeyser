@@ -264,6 +264,9 @@ public class GeyserCameraData implements CameraData {
 
     @Override
     public void hideElement(GuiElement... elements) {
+        if (!session.supportsBedrockPacket(SetHudPacket.class)) {
+            return;
+        }
         Objects.requireNonNull(elements);
         SetHudPacket packet = new SetHudPacket();
         packet.setVisibility(HudVisibility.HIDE);
@@ -284,6 +287,9 @@ public class GeyserCameraData implements CameraData {
 
     @Override
     public void resetElement(GuiElement... elements) {
+        if (!session.supportsBedrockPacket(SetHudPacket.class)) {
+            return;
+        }
         SetHudPacket packet = new SetHudPacket();
         packet.setVisibility(HudVisibility.RESET);
         Set<HudElement> elementSet = packet.getElements();

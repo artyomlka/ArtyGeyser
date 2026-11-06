@@ -204,7 +204,7 @@ public final class BundleCache {
      * from the client.
      */
     public void onOldItemDelete(GeyserItemStack itemStack) {
-        if (itemStack.getBundleId() != -1) {
+        if (itemStack.getBundleId() != -1 && session.supportsBedrockPacket(ContainerRegistryCleanupPacket.class)) {
             // Clean up old container ID, to match BDS behavior.
             ContainerRegistryCleanupPacket packet = new ContainerRegistryCleanupPacket();
             packet.getContainers().add(createContainer(itemStack.getBundleId()));

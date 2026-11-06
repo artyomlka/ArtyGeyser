@@ -78,7 +78,11 @@ public final class TagRegistryPopulator {
 
         List<ObjectIntPair<String>> paletteVersions = new ArrayList<>();
         for (LegacyBedrockProfile profile : LegacyBedrockProfile.PROFILES) {
-            paletteVersions.add(ObjectIntPair.of(profile.itemTags(), profile.protocolVersion()));
+            if (profile.itemTags() == null) {
+                Registries.TAGS.register(profile.protocolVersion(), new Object2ObjectOpenCustomHashMap<>(hashStrategy));
+            } else {
+                paletteVersions.add(ObjectIntPair.of(profile.itemTags(), profile.protocolVersion()));
+            }
         }
         paletteVersions.addAll(List.of(
             ObjectIntPair.of("26_0", Bedrock_v924.CODEC.getProtocolVersion()),

@@ -26,6 +26,7 @@
 package org.geysermc.geyser.translator.protocol.bedrock.entity.player.input;
 
 import org.cloudburstmc.math.vector.Vector3d;
+import org.cloudburstmc.math.vector.Vector2f;
 import org.cloudburstmc.math.vector.Vector3f;
 import org.cloudburstmc.protocol.bedrock.data.PlayerAuthInputData;
 import org.cloudburstmc.protocol.bedrock.data.entity.EntityFlag;
@@ -55,7 +56,9 @@ final class BedrockMovePlayer {
 
         // We need to save player interact rotation value, as this rotation is used for Touch device and indicate where the player is touching.
         // This is needed so that we can interact with where player actually touch on the screen on Bedrock and not just from the center of the screen.
-        entity.setBedrockInteractRotation(packet.getInteractRotation());
+        Vector2f interactRotation = packet.getInteractRotation();
+        entity.setBedrockInteractRotation(interactRotation != null ? interactRotation
+            : Vector2f.from(packet.getRotation().getX(), packet.getRotation().getY()));
 
         // Ignore movement packets until Bedrock's position matches the teleported position
         if (session.getUnconfirmedTeleport() != null) {

@@ -35,6 +35,7 @@ import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.ints.IntArrayList;
 import it.unimi.dsi.fastutil.objects.Object2ObjectMap;
 import it.unimi.dsi.fastutil.objects.Object2ObjectMaps;
+import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
 import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.objects.ObjectIntPair;
 import it.unimi.dsi.fastutil.objects.ObjectOpenHashSet;
@@ -62,6 +63,7 @@ import org.geysermc.geyser.level.block.property.Properties;
 import org.geysermc.geyser.level.block.type.Block;
 import org.geysermc.geyser.level.block.type.BlockState;
 import org.geysermc.geyser.level.block.type.FlowerPotBlock;
+import org.geysermc.geyser.network.bedrock.GameProtocol;
 import org.geysermc.geyser.network.bedrock.LegacyBedrockProfile;
 import org.geysermc.geyser.registry.BlockRegistries;
 import org.geysermc.geyser.registry.java.BuiltInJavaRegistries;
@@ -147,31 +149,19 @@ public final class BlockRegistryPopulator {
         //noinspection UnstableApiUsage
         Interner<NbtMap> statesInterner = Interners.newStrongInterner();
 
+        List<NbtMap> canonicalPalette = readBlockPalette("26_0", statesInterner);
+        var canonicalIds = new Object2IntOpenHashMap<NbtMap>(canonicalPalette.size());
+        canonicalIds.defaultReturnValue(-1);
+        for (int i = 0; i < canonicalPalette.size(); i++) {
+            canonicalIds.put(canonicalPalette.get(i), i);
+        }
+
         for (ObjectIntPair<String> palette : blockMappers.keySet()) {
             int protocolVersion = palette.valueInt();
-            List<NbtMap> vanillaBlockStates;
-            List<NbtMap> blockStates;
-            try (InputStream stream = GeyserImpl.getInstance().getBootstrap().getResourceOrThrow(String.format("bedrock/block_palette.%s.nbt", palette.key()));
-                NBTInputStream nbtInputStream = new NBTInputStream(new DataInputStream(new GZIPInputStream(stream)), true, true)) {
-                NbtMap blockPalette = (NbtMap) nbtInputStream.readTag();
-
-                vanillaBlockStates = new ArrayList<>(blockPalette.getList("blocks", NbtType.COMPOUND));
-                for (int i = 0; i < vanillaBlockStates.size(); i++) {
-                    NbtMapBuilder builder = vanillaBlockStates.get(i).toBuilder();
-                    builder.remove("version"); // Remove all nbt tags which are not needed for differentiating states
-                    builder.remove("name_hash"); // Quick workaround - was added in 1.19.20
-                    builder.remove("network_id"); // Added in 1.19.80
-                    builder.remove("block_id"); // Added in 1.20.60
-                    //noinspection UnstableApiUsage
-                    builder.putCompound("states", statesInterner.intern((NbtMap) builder.remove("states")));
-                    vanillaBlockStates.set(i, builder.build());
-                }
-
-                blockStates = new ArrayList<>(vanillaBlockStates);
-            } catch (Exception e) {
-                throw new AssertionError("Unable to get blocks from runtime block states", e);
-            }
-
+            List<NbtMap> vanillaBlockStates = palette.key().equals("26_0") ? canonicalPalette : readBlockPalette(palette.key(), statesInterner);
+            List<NbtMap> blockStates = new ArrayList<>(vanillaBlockStates);
+            int[] legacyRuntimeIds = GameProtocol.is1_21_110orHigher(protocolVersion)
+                ? null : readLegacyRuntimeIds(palette.key(), canonicalPalette.size(), vanillaBlockStates.size());
             List<BlockPropertyData> customBlockProperties = new ArrayList<>();
             List<NbtMap> customBlockStates = new ArrayList<>();
             List<CustomBlockState> customExtBlockStates = new ArrayList<>();
@@ -279,6 +269,13 @@ public final class BlockRegistryPopulator {
 
                 NbtMap originalBedrockTag = buildBedrockState(blockState, entry);
                 NbtMap bedrockTag = stateMapper.remapBlock(originalBedrockTag);
+                if (legacyRuntimeIds != null) {
+                    int canonicalId = canonicalIds.getInt(bedrockTag);
+                    if (canonicalId < 0) {
+                        throw new IllegalStateException("Missing canonical Bedrock block for " + javaId + ": " + bedrockTag);
+                    }
+                    bedrockTag = vanillaBlockStates.get(legacyRuntimeIds[canonicalId]);
+                }
 
                 GeyserBedrockBlock vanillaBedrockDefinition = blockStateOrderedMap.get(bedrockTag);
 
@@ -451,6 +448,39 @@ public final class BlockRegistryPopulator {
                     .blockProperties(customBlockProperties)
                     .customBlockStateDefinitions(customBlockStateDefinitions)
                     .build());
+        }
+    }
+
+    private static List<NbtMap> readBlockPalette(String version, Interner<NbtMap> statesInterner) {
+        try (InputStream stream = GeyserImpl.getInstance().getBootstrap().getResourceOrThrow("bedrock/block_palette.%s.nbt".formatted(version));
+             NBTInputStream nbtInputStream = new NBTInputStream(new DataInputStream(new GZIPInputStream(stream)), true, true)) {
+            NbtMap palette = (NbtMap) nbtInputStream.readTag();
+            List<NbtMap> states = new ArrayList<>(palette.getList("blocks", NbtType.COMPOUND));
+            for (int i = 0; i < states.size(); i++) {
+                NbtMapBuilder state = states.get(i).toBuilder();
+                state.remove("version");
+                state.remove("name_hash");
+                state.remove("network_id");
+                state.remove("block_id");
+                state.putCompound("states", statesInterner.intern((NbtMap) state.remove("states")));
+                states.set(i, state.build());
+            }
+            return states;
+        } catch (IOException e) {
+            throw new AssertionError("Unable to load Bedrock block palette " + version, e);
+        }
+    }
+
+    private static int[] readLegacyRuntimeIds(String version, int canonicalSize, int paletteSize) {
+        try (InputStream stream = GeyserImpl.getInstance().getBootstrap().getResourceOrThrow("bedrock/legacy_block_ids.%s.nbt".formatted(version));
+             NBTInputStream nbtInputStream = NbtUtils.createGZIPReader(stream)) {
+            int[] ids = ((NbtMap) nbtInputStream.readTag()).getIntArray("runtime_ids");
+            if (ids.length != canonicalSize || Arrays.stream(ids).anyMatch(id -> id < 0 || id >= paletteSize)) {
+                throw new IllegalStateException("Invalid legacy block runtime IDs for " + version);
+            }
+            return ids;
+        } catch (IOException e) {
+            throw new AssertionError("Unable to load legacy block runtime IDs for " + version, e);
         }
     }
 

@@ -153,6 +153,12 @@ public class ItemRegistryPopulator {
         }
     }
 
+    private record LegacyItemOverride(String identifier, int data, boolean substitute) {
+        GeyserMappingItem apply(GeyserMappingItem mapping) {
+            return mapping.withBedrockIdentifier(identifier).withBedrockData(data);
+        }
+    }
+
     // TODO: ideally split the populating of the Java ITEM registry (non-vanilla items) from the populating of item mappings
     public static void populate() {
         Map<Item, Item> preChaosCubedItems = ChaosCubedConverter.itemMappings();
@@ -160,6 +166,10 @@ public class ItemRegistryPopulator {
         Map<Item, Item> preMountsOfMayhemItems = MountsOfMayhemConverter.itemMappings(preGoldenDandelionItems);
         List<PaletteVersion> paletteVersions = new ArrayList<>(7 + LegacyBedrockProfile.PROFILES.size());
         for (LegacyBedrockProfile profile : LegacyBedrockProfile.PROFILES) {
+            if (!GameProtocol.is1_21_110orHigher(profile.protocolVersion())) {
+                paletteVersions.add(new PaletteVersion(profile.itemPalette(), profile.protocolVersion()));
+                continue;
+            }
             Map<Item, Item> replacements = GameProtocol.is1_21_130orHigher(profile.protocolVersion())
                 ? preGoldenDandelionItems : preMountsOfMayhemItems;
             paletteVersions.add(new PaletteVersion(profile.itemPalette(), profile.protocolVersion(), replacements));
@@ -203,11 +213,24 @@ public class ItemRegistryPopulator {
                 throw new AssertionError("Unable to load Bedrock runtime item IDs", e);
             }
 
-            NbtMap vanillaComponents;
-            try (InputStream stream = bootstrap.getResourceOrThrow("bedrock/item_components.%s.nbt".formatted(palette.version()))) {
-                vanillaComponents = (NbtMap) NbtUtils.createGZIPReader(stream, true, true).readTag();
-            } catch (Exception e) {
-                throw new AssertionError("Unable to load Bedrock item components", e);
+            boolean modernItemComponents = GameProtocol.is1_21_60orHigher(palette.protocolVersion());
+            Map<String, LegacyItemOverride> legacyOverrides = Collections.emptyMap();
+            if (!GameProtocol.is1_21_110orHigher(palette.protocolVersion())) {
+                Type type = new TypeToken<Map<String, LegacyItemOverride>>() { }.getType();
+                try (InputStream stream = bootstrap.getResourceOrThrow("bedrock/legacy_items.%s.json".formatted(palette.version()))) {
+                    legacyOverrides = JsonUtils.fromJson(stream, type);
+                } catch (Exception e) {
+                    throw new AssertionError("Unable to load legacy item mappings for " + palette.version(), e);
+                }
+            }
+
+            NbtMap vanillaComponents = NbtMap.EMPTY;
+            if (modernItemComponents) {
+                try (InputStream stream = bootstrap.getResourceOrThrow("bedrock/item_components.%s.nbt".formatted(palette.version()))) {
+                    vanillaComponents = (NbtMap) NbtUtils.createGZIPReader(stream, true, true).readTag();
+                } catch (Exception e) {
+                    throw new AssertionError("Unable to load Bedrock item components", e);
+                }
             }
 
             // Used for custom items
@@ -236,12 +259,12 @@ public class ItemRegistryPopulator {
 
                 // Some item on Bedrock Edition have a different stack size, so we're changing that through the component.
                 // This resolve https://github.com/GeyserMC/Geyser/issues/5612 and https://github.com/GeyserMC/Geyser/issues/4905
-                if (definition.getIdentifier().equals("minecraft:cake")) {
+                if (modernItemComponents && definition.getIdentifier().equals("minecraft:cake")) {
                     definition = new SimpleItemDefinition(entry.getName().intern(), id, ItemVersion.from(entry.getVersion()), true, fromItemDefinitionToDataDriven(definition, 1, null, null, false));
-                } else if (definition.getIdentifier().equals("minecraft:armor_stand")) {
+                } else if (modernItemComponents && definition.getIdentifier().equals("minecraft:armor_stand")) {
                     // You have to change the item version to data driven for armor stand else this won't work.
                     definition = new SimpleItemDefinition(entry.getName().intern(), id, ItemVersion.DATA_DRIVEN, true, fromItemDefinitionToDataDriven(definition, 16, "armor_stand", "item.armor_stand.name", false));
-                } else if (definition.getIdentifier().equals("minecraft:firework_rocket")) {
+                } else if (modernItemComponents && definition.getIdentifier().equals("minecraft:firework_rocket")) {
                     // For fireworks rocket, we purposely make this item data driven so now bedrock won't do client-sided boosting
                     // and now we can control fireworks boost ourselves! This resolve https://github.com/GeyserMC/Geyser/issues/5409
                     definition = new SimpleItemDefinition(entry.getName().intern(), id, ItemVersion.DATA_DRIVEN, true, fromItemDefinitionToDataDriven(definition, 64, "fireworks", "item.fireworks.name", true));
@@ -301,7 +324,9 @@ public class ItemRegistryPopulator {
             List<CreativeItemGroup> creativeItemGroups = new ObjectArrayList<>();
             Map<String, Integer> creativeGroupIds = new Object2IntOpenHashMap<>();
             Map<CreativeItemCategory, Integer> lastCreativeGroupIds = new Object2IntOpenHashMap<>();
-            CreativeItemRegistryPopulator.readCreativeItemGroups(palette, creativeItems, creativeItemGroups, creativeGroupIds, lastCreativeGroupIds);
+            if (modernItemComponents) {
+                CreativeItemRegistryPopulator.readCreativeItemGroups(palette, creativeItems, creativeItemGroups, creativeGroupIds, lastCreativeGroupIds);
+            }
 
             BlockMappings blockMappings = BlockRegistries.BLOCKS.forVersion(palette.protocolVersion());
 
@@ -328,6 +353,14 @@ public class ItemRegistryPopulator {
                 } else {
                     // check if any mapping changes need to be made on this version
                     mappingItem = palette.remapper().remapItem(javaItem, entry.getValue());
+                }
+
+                LegacyItemOverride legacy = legacyOverrides.get(entry.getKey());
+                if (legacy != null) {
+                    mappingItem = legacy.apply(mappingItem);
+                    if (legacy.substitute()) {
+                        javaOnlyItems.add(javaItem);
+                    }
                 }
 
                 String bedrockIdentifier = mappingItem.getBedrockIdentifier();
@@ -425,7 +458,7 @@ public class ItemRegistryPopulator {
                                         NbtMap states = blockTag.getCompound("states");
                                         boolean valid = true;
                                         for (Map.Entry<String, Object> nbtEntry : requiredBlockStates.entrySet()) {
-                                            if (!states.get(nbtEntry.getKey()).equals(nbtEntry.getValue())) {
+                                            if (!nbtEntry.getValue().equals(states.get(nbtEntry.getKey()))) {
                                                 // A required block state doesn't match - this one is not valid
                                                 valid = false;
                                                 break;

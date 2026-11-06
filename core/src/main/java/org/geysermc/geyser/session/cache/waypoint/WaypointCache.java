@@ -35,6 +35,7 @@ import org.geysermc.geyser.api.waypoint.CustomWaypointStyle;
 import org.geysermc.geyser.api.waypoint.CustomWaypointStyleRegisterException;
 import org.geysermc.geyser.entity.type.Entity;
 import org.geysermc.geyser.entity.type.player.PlayerEntity;
+import org.geysermc.geyser.network.bedrock.GameProtocol;
 import org.geysermc.geyser.registry.Registries;
 import org.geysermc.geyser.session.GeyserSession;
 import org.geysermc.geyser.skin.SkinManager;
@@ -93,6 +94,10 @@ public final class WaypointCache {
     }
 
     public void handlePacket(ClientboundTrackedWaypointPacket packet) {
+        if (!GameProtocol.is1_21_80orHigher(session.protocolVersion())) {
+            return;
+        }
+
         switch (packet.getOperation()) {
             case TRACK -> track(packet.getWaypoint());
             case UNTRACK -> untrack(packet.getWaypoint());
@@ -107,6 +112,10 @@ public final class WaypointCache {
     }
 
     public void addEntity(Entity entity) {
+        if (!GameProtocol.is1_21_80orHigher(session.protocolVersion())) {
+            return;
+        }
+
         UUID uuid = entity.uuid();
         if (uuid == null) {
             return;
@@ -137,6 +146,10 @@ public final class WaypointCache {
     }
 
     public void removeEntity(Entity entity) {
+        if (!GameProtocol.is1_21_80orHigher(session.protocolVersion())) {
+            return;
+        }
+
         UUID uuid = entity.uuid();
         if (uuid == null) {
             return;
@@ -249,7 +262,7 @@ public final class WaypointCache {
     public void clear() {
         waypoints.clear();
         waypointColors.clear();
-        if (!GeyserWaypoint.uses26_10WaypointPacket(session)) {
+        if (GameProtocol.is1_21_80orHigher(session.protocolVersion()) && !GeyserWaypoint.uses26_10WaypointPacket(session)) {
             session.sendGameRule("locatorBar", false);
         }
     }

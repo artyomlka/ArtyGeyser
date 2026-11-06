@@ -168,7 +168,9 @@ public class FormCache {
             Int2ObjectMap<Form> copy = new Int2ObjectOpenHashMap<>(this.forms);
             this.forms.clear();
             // Now close it
-            session.sendUpstreamPacket(new ClientboundCloseFormPacket());
+            if (session.supportsBedrockPacket(ClientboundCloseFormPacket.class)) {
+                session.sendUpstreamPacket(new ClientboundCloseFormPacket());
+            }
 
             for (Form form : copy.values()) {
                 try {

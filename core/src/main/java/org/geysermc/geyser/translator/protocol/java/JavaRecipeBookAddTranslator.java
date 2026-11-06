@@ -142,7 +142,9 @@ public class JavaRecipeBookAddTranslator extends PacketTranslator<ClientboundRec
             // This was definitely in the codebase the entire time and did not
             // accidentally get refactored out during Java 1.21.3. :)
             session.sendUpstreamPacket(craftingDataPacket);
-            session.sendUpstreamPacket(recipesPacket);
+            if (GameProtocol.supportsRecipeUnlocking(session.protocolVersion())) {
+                session.sendUpstreamPacket(recipesPacket);
+            }
         }
         session.getLastRecipeNetId().set(netId);
     }

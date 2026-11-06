@@ -76,7 +76,8 @@ public final class BedrockPlayerAuthInputTranslator extends PacketTranslator<Pla
 
         session.setClientTicks(packet.getTick());
         int protocolVersion = session.protocolVersion();
-        boolean predictsVehicles = GameProtocol.is26_10orHigher(protocolVersion) || !GameProtocol.is1_21_130orHigher(protocolVersion);
+        boolean predictsVehicles = GameProtocol.is26_10orHigher(protocolVersion)
+            || (GameProtocol.hasPredictedVehicleInput(protocolVersion) && !GameProtocol.is1_21_130orHigher(protocolVersion));
         session.setInClientPredictedVehicle(predictsVehicles
             && packet.getInputData().contains(PlayerAuthInputData.IN_CLIENT_PREDICTED_IN_VEHICLE) && entity.getVehicle() != null);
 
