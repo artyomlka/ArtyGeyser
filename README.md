@@ -20,20 +20,48 @@ The fork builds the Velocity plugin. The compatibility changes are awaiting a bu
 
 | Bedrock releases in the codec registry | Protocol ID |
 | --- | --- |
+| 1.20.0–1.20.1 | 589 |
+| 1.20.10–1.20.15 | 594 |
+| 1.20.30–1.20.32 | 618 |
+| 1.20.40–1.20.41 | 622 |
+| 1.20.50–1.20.51 | 630 |
+| 1.20.60–1.20.62 | 649 |
+| 1.20.70–1.20.73 | 662 |
+| 1.20.80–1.20.81 | 671 |
+| 1.21.0–1.21.1 | 685 |
+| 1.21.2–1.21.3 | 686 |
+| 1.21.20–1.21.23 | 712 |
+| 1.21.30–1.21.31 | 729 |
+| 1.21.40–1.21.44 | 748 |
+| 1.21.50–1.21.51 | 766 |
+| 1.21.60–1.21.62 | 776 |
+| 1.21.70–1.21.73 | 786 |
+| 1.21.80–1.21.84 | 800 |
+| 1.21.90–1.21.92 | 818 |
+| 1.21.93–1.21.94 | 819 |
+| 1.21.100–1.21.101 | 827 |
+| 1.21.110–1.21.114 | 844 |
+| 1.21.120–1.21.123 | 859 |
+| 1.21.124 | 860 |
+| 1.21.130–1.21.132 | 898 |
 | 26.0–26.3 | 924 |
 | 26.10–26.13 | 944 |
 | 26.20–26.23 | 975 |
-| 26.30–26.34 | 1001 |
+| 26.30–26.35 | 1001 |
 | 26.40–26.44 | 2168 |
 | 26.45 | 2169 |
 | 26.50–26.52 | 2193 |
 | 26.60–26.62 | 2225 |
 
-Bedrock 1.20.x and 1.21.x still require a backport. The older 26.x palettes use visual substitutes for blocks and items introduced in later versions. Waypoints on 26.10 use the client's built-in icons, and 26.0 uses the legacy player location mechanism.
+The historical palettes and item data come from Geyser's Git history. The files named "legacy_block_ids" index the 26.0 palette and preserve each older palette's original runtime IDs. Their exact state matches were derived with [BedrockBlockUpgradeSchema](https://github.com/opencollab-incubator/BedrockBlockUpgradeSchema/tree/1077ee640ed39f60266f7a7c8ab331ef76d7931e) through schema 0331. Regenerate the tables if the order of either palette changes.
+
+For content unavailable on an older client, the fork uses a visual substitute. Java block states, collision data and game mechanics still come from Paper. A substitute can have different client-side visuals or prediction. Waypoints use the legacy player location mechanism on 1.21.80–26.3 and the built-in locator icons on 26.10. Client features that require packets absent from a version are limited on that version.
 
 Geyser connects to Velocity as Java 26.3. For a Paper 1.21.11 backend, use a Velocity release that accepts Java 26.3 and [ViaVersion on Paper](https://geysermc.org/wiki/geyser/supported-versions/). [ViaVersion 5.12.0](https://github.com/ViaVersion/ViaVersion/releases/tag/5.12.0) added Java 26.3 client support.
 
-For old Bedrock clients, configure Bedrock transport as "both" and give WebRTC a separate available UDP port. RakNet uses the Bedrock UDP port. See the "bedrock.transport" and "bedrock.webrtc-port" settings.
+For old Bedrock clients, configure "bedrock.transport" as "both". For example, "bedrock.port: 19132" is the UDP port the player enters to connect over RakNet. "bedrock.webrtc-port: 19133" is a separate UDP listener for NetherNet and is not the RakNet address players enter. The actual ports depend on the deployment.
+
+Paper 1.21.11 defaults to 75 sent chunks per second per player in "paper-global.yml" under "chunk-loading-basic.player-max-chunk-send-rate". Record the configured value alongside the world view and simulation distances when taking a baseline trace.
 
 For a profiling run, start Velocity with "-DGeyser.Audit.Xuid=<test-account-xuid>" before "-jar". The selected account's trace records chunk encoding and bytes, Java batch completion, outgoing Bedrock batch size before and after compression, session tick lateness, input queue wait, and teleport confirmations and resends. Times are monotonic nanoseconds. The start record pairs the monotonic clock with epoch milliseconds for comparison with external logs. Trace logging itself adds work during the run.
 
