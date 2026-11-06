@@ -82,7 +82,7 @@ public class ItemFrameEntity extends HangingEntity {
         blockDefinition = buildBlockDefinition(Direction.SOUTH); // Default to SOUTH direction, like on Java - entity metadata should correct this when necessary
         bedrockPosition = position().toInt();
 
-        session.getItemFrameCache().put(bedrockPosition, this);
+        session.getItemFrameCache().add(bedrockPosition, this);
     }
 
     @Override

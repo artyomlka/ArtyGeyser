@@ -137,7 +137,6 @@ import org.geysermc.geyser.entity.attribute.GeyserAttributeType;
 import org.geysermc.geyser.entity.type.BoatEntity;
 import org.geysermc.geyser.entity.type.Entity;
 import org.geysermc.geyser.entity.type.FishingHookEntity;
-import org.geysermc.geyser.entity.type.ItemFrameEntity;
 import org.geysermc.geyser.entity.type.Tickable;
 import org.geysermc.geyser.entity.type.player.PlayerEntity;
 import org.geysermc.geyser.entity.type.player.SessionPlayerEntity;
@@ -182,6 +181,7 @@ import org.geysermc.geyser.session.cache.EntityCache;
 import org.geysermc.geyser.session.cache.EntityEffectCache;
 import org.geysermc.geyser.session.cache.FormCache;
 import org.geysermc.geyser.session.cache.InputCache;
+import org.geysermc.geyser.session.cache.ItemFrameCache;
 import org.geysermc.geyser.session.cache.LodestoneCache;
 import org.geysermc.geyser.session.cache.PistonCache;
 import org.geysermc.geyser.session.cache.PreferencesCache;
@@ -424,7 +424,7 @@ public class GeyserSession implements GeyserConnection, GeyserCommandSource, Jav
      * A map of Vector3i positions to Java entities.
      * Used for translating Bedrock block actions to Java entity actions.
      */
-    private final Map<Vector3i, ItemFrameEntity> itemFrameCache = new Object2ObjectOpenHashMap<>();
+    private final ItemFrameCache itemFrameCache = new ItemFrameCache();
 
     /**
      * A map of all players (and their heads) that are wearing a player head with a custom texture.
