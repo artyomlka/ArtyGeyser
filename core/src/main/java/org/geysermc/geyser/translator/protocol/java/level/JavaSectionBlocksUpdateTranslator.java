@@ -108,7 +108,7 @@ public class JavaSectionBlocksUpdateTranslator extends PacketTranslator<Clientbo
 
             updateSubChunkBlocksPacket.getStandardBlocks().add(new org.cloudburstmc.protocol.bedrock.data.BlockChangeEntry(
                 entry.getPosition(),
-                session.getBlockMappings().getBedrockBlock(blockState),
+                session.getGrassDetail().definition(blockState, entry.getPosition()),
                 FLAG_ALL,
                 -1,
                 MessageType.NONE

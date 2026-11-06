@@ -136,6 +136,11 @@ public class DimensionUtils {
         session.getPlayerEntity().setLastTickEndVelocity(Vector3f.ZERO);
         session.setSpawned(false);
         session.setLastChunkPosition(null);
+        session.getGrassDetail().reset();
+        String fog = session.getGeyser().config().gameplay().terrainFog();
+        if (!fog.isEmpty()) {
+            session.camera().removeFog(fog);
+        }
     }
 
     private static void finalizeDimensionSwitch(GeyserSession session, Entity player) {

@@ -178,6 +178,7 @@ import org.geysermc.geyser.session.cache.BlockBreakHandler;
 import org.geysermc.geyser.session.cache.BookEditCache;
 import org.geysermc.geyser.session.cache.BundleCache;
 import org.geysermc.geyser.session.cache.ChunkCache;
+import org.geysermc.geyser.session.cache.GrassDetail;
 import org.geysermc.geyser.session.cache.ComponentCache;
 import org.geysermc.geyser.session.cache.EntityCache;
 import org.geysermc.geyser.session.cache.EntityEffectCache;
@@ -306,6 +307,7 @@ public class GeyserSession implements GeyserConnection, GeyserCommandSource, Jav
     private final BookEditCache bookEditCache;
     private final BundleCache bundleCache;
     private final ChunkCache chunkCache;
+    private final GrassDetail grassDetail;
     private final EntityCache entityCache;
     private final EntityEffectCache effectCache;
     private final FormCache formCache;
@@ -885,6 +887,7 @@ public class GeyserSession implements GeyserConnection, GeyserCommandSource, Jav
         this.bookEditCache = new BookEditCache(this);
         this.bundleCache = new BundleCache(this);
         this.chunkCache = new ChunkCache(this);
+        this.grassDetail = new GrassDetail(this);
         this.entityCache = new EntityCache(this);
         this.effectCache = new EntityEffectCache();
         this.formCache = new FormCache(this);

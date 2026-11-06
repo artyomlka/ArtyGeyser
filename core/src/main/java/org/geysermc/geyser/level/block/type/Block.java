@@ -93,7 +93,7 @@ public class Block {
     public void updateBlock(GeyserSession session, BlockState state, Vector3i position) {
         checkForEmptySkull(session, state, position);
 
-        BlockDefinition definition = session.getBlockMappings().getBedrockBlock(state);
+        BlockDefinition definition = session.getGrassDetail().definition(state, position);
         sendBlockUpdatePacket(session, state, definition, position);
 
         if (this instanceof BedrockChunkWantsBlockEntityTag blockEntity) {

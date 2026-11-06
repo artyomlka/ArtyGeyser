@@ -106,6 +106,7 @@ public class ChunkUtils {
             session.sendUpstreamPacket(chunkPublisherUpdatePacket);
 
             session.setLastChunkPosition(newChunkPos);
+            session.getGrassDetail().move(newChunkPos);
         }
     }
 

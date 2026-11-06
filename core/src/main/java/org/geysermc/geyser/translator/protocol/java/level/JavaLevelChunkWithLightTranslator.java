@@ -51,6 +51,7 @@ import org.geysermc.geyser.level.chunk.bitarray.SingletonBitArray;
 import org.geysermc.geyser.registry.BlockRegistries;
 import org.geysermc.geyser.session.GeyserSession;
 import org.geysermc.geyser.session.SessionPerformanceTrace;
+import org.geysermc.geyser.session.cache.GrassDetail;
 import org.geysermc.geyser.registry.java.JavaRegistries;
 import org.geysermc.geyser.translator.level.BiomeTranslator;
 import org.geysermc.geyser.translator.level.block.entity.BedrockChunkWantsBlockEntityTag;
@@ -106,6 +107,8 @@ public class JavaLevelChunkWithLightTranslator extends PacketTranslator<Clientbo
         BedrockDimension bedrockDimension = session.getBedrockDimension();
         int maxBedrockSectionY = (bedrockDimension.height() >> 4) - 1;
 
+        boolean hideGrass = session.getGrassDetail().hideInChunk(packet.getX(), packet.getZ());
+        int airRuntimeId = session.getBlockMappings().getBedrockAir().getRuntimeId();
         int sectionCount;
         ByteBuf byteBuf = null;
 
@@ -143,7 +146,7 @@ public class JavaLevelChunkWithLightTranslator extends PacketTranslator<Clientbo
                     for (int yzx = 0; yzx < BlockStorage.SIZE; yzx++) {
                         int javaId = javaData.get(yzx);
                         BlockState state = BlockState.of(javaId);
-                        int bedrockId = session.getBlockMappings().getBedrockBlockId(javaId);
+                        int bedrockId = hideGrass && GrassDetail.isGrass(state) ? airRuntimeId : session.getBlockMappings().getBedrockBlockId(javaId);
                         int xzy = indexYZXtoXZY(yzx);
                         section.getBlockStorageArray()[0].setFullBlock(xzy, bedrockId);
 
@@ -166,7 +169,7 @@ public class JavaLevelChunkWithLightTranslator extends PacketTranslator<Clientbo
                 if (javaPalette instanceof SingletonPalette) {
                     // There's only one block here. Very easy!
                     int javaId = javaPalette.idToState(0);
-                    int bedrockId = session.getBlockMappings().getBedrockBlockId(javaId);
+                    int bedrockId = hideGrass && GrassDetail.isGrass(BlockState.of(javaId)) ? airRuntimeId : session.getBlockMappings().getBedrockBlockId(javaId);
                     BlockStorage blockStorage = new BlockStorage(SingletonBitArray.INSTANCE, IntLists.singleton(bedrockId));
 
                     if (BlockRegistries.WATERLOGGED.get().get(javaId)) {
@@ -187,7 +190,7 @@ public class JavaLevelChunkWithLightTranslator extends PacketTranslator<Clientbo
                 // Iterate through palette and convert state IDs to Bedrock, doing some additional checks as we go
                 for (int i = 0; i < javaPalette.size(); i++) {
                     int javaId = javaPalette.idToState(i);
-                    bedrockPalette.add(session.getBlockMappings().getBedrockBlockId(javaId));
+                    bedrockPalette.add(hideGrass && GrassDetail.isGrass(BlockState.of(javaId)) ? airRuntimeId : session.getBlockMappings().getBedrockBlockId(javaId));
 
                     if (BlockRegistries.WATERLOGGED.get().get(javaId)) {
                         waterloggedPaletteIds.set(i);

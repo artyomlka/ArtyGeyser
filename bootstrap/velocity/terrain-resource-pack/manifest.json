@@ -1,0 +1,29 @@
+{
+  "format_version": 2,
+  "header": {
+    "name": "ArtyGrief Terrain Fog",
+    "description": "Soft overworld distance fog on the test proxy",
+    "uuid": "30dbfb63-c6f1-4809-b962-fbd21a9d2bf2",
+    "version": [
+      1,
+      0,
+      0
+    ],
+    "min_engine_version": [
+      1,
+      20,
+      0
+    ]
+  },
+  "modules": [
+    {
+      "type": "resources",
+      "uuid": "052ec3be-96cf-4659-bb88-7dbc04e174d1",
+      "version": [
+        1,
+        0,
+        0
+      ]
+    }
+  ]
+}

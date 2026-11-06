@@ -427,6 +427,14 @@ public interface GeyserConfig {
         @DefaultBoolean(true)
         boolean commandSuggestions();
 
+        @Comment("Hide grass and ferns outside this chunk radius. Use -1 for the full view distance, or 0 to 4 for nearby detail.")
+        @DefaultNumeric(-1)
+        int grassDetailDistance();
+
+        @Comment("Optional overworld fog identifier from an installed Bedrock resource pack.")
+        @DefaultString("")
+        String terrainFog();
+
         @Comment("Controls if coordinates are shown to players.")
         @DefaultBoolean(true)
         boolean showCoordinates();

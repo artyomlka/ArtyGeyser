@@ -97,6 +97,10 @@ public class JavaPlayerPositionTranslator extends PacketTranslator<ClientboundPl
             // Log out and back in - and you're looking elsewhere :)
             entity.updateOwnRotation(entity.getYaw(), entity.getPitch(), entity.getHeadYaw());
             session.setSpawned(true);
+            String fog = session.getGeyser().config().gameplay().terrainFog();
+            if (!fog.isEmpty() && session.getBedrockDimension().bedrockId() == 0) {
+                session.camera().sendFog(fog);
+            }
 
             // Make sure the player moves away from (0, 32767, 0) before accepting movement packets
             Vector3f entityPosition = entity.position();
