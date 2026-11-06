@@ -14,12 +14,28 @@ The ultimate goal of this project is to allow Minecraft: Bedrock Edition users t
 
 Special thanks to the DragonProxy project for being a trailblazer in protocol translation and for all the team members who have joined us here!
 
-## Supported Versions
+## ArtyGeyser Velocity
 
-| Edition | Supported Versions                                                                                |
-|---------|---------------------------------------------------------------------------------------------------|
-| Bedrock | 26.40, 26.41, 26.42, 26.43, 26.44, 26.45, 26.50, 26.51, 26.52, 26.60, 26.61, 26.62.               |
-| Java    | 26.3 (For older versions, [see this guide](https://geysermc.org/wiki/geyser/supported-versions/)) |
+The fork builds the Velocity plugin. The compatibility changes are awaiting a build and client verification.
+
+| Bedrock releases in the codec registry | Protocol ID |
+| --- | --- |
+| 26.0–26.3 | 924 |
+| 26.10–26.13 | 944 |
+| 26.20–26.23 | 975 |
+| 26.30–26.34 | 1001 |
+| 26.40–26.44 | 2168 |
+| 26.45 | 2169 |
+| 26.50–26.52 | 2193 |
+| 26.60–26.62 | 2225 |
+
+Bedrock 1.20.x and 1.21.x still require a backport. The older 26.x palettes use visual substitutes for blocks and items introduced in later versions. Waypoints on 26.10 use the client's built-in icons, and 26.0 uses the legacy player location mechanism.
+
+Geyser connects to Velocity as Java 26.3. For a Paper 1.21.11 backend, use a Velocity release that accepts Java 26.3 and [ViaVersion on Paper](https://geysermc.org/wiki/geyser/supported-versions/). [ViaVersion 5.12.0](https://github.com/ViaVersion/ViaVersion/releases/tag/5.12.0) added Java 26.3 client support.
+
+For old Bedrock clients, configure Bedrock transport as "both" and give WebRTC a separate available UDP port. RakNet uses the Bedrock UDP port. See the "bedrock.transport" and "bedrock.webrtc-port" settings.
+
+For a profiling run, start Velocity with "-DGeyser.Audit.Xuid=<test-account-xuid>" before "-jar". The selected account's trace records chunk encoding and bytes, Java batch completion, outgoing Bedrock batch size before and after compression, session tick lateness, input queue wait, and teleport confirmations and resends. Times are monotonic nanoseconds. The start record pairs the monotonic clock with epoch milliseconds for comparison with external logs. Trace logging itself adds work during the run.
 
 ## Setting Up
 Take a look [here](https://geysermc.org/wiki/geyser/setup/) for how to set up Geyser.
@@ -42,7 +58,8 @@ There are a few things Geyser is unable to support due to various differences be
 ## Compiling
 1. Clone the repo to your computer
 2. Navigate to the Geyser root directory and run `git submodule update --init --recursive`. This command downloads all the needed submodules for Geyser and is a crucial step in this process.
-3. Run `gradlew build` and locate to `bootstrap/build` folder.
+3. Set `GRADLE_USER_HOME` to your cache directory on D: before building on Windows.
+4. Run `.\gradlew.bat :velocity:build`. The plugin is generated at `bootstrap/velocity/build/libs/Geyser-Velocity.jar`. The GitHub Actions build runs on manual dispatch.
 
 ## Contributing
 Any contributions are appreciated. Please feel free to reach out to us on [Discord](https://discord.gg/geysermc) if
