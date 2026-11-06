@@ -262,3 +262,6 @@ locales/
 /permissions.yml
 
 bootstrap/mod/gametest/src/main/generated/.cache
+
+### Local tools ###
+/.codex/
