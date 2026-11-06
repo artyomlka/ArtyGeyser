@@ -36,6 +36,7 @@ import org.cloudburstmc.protocol.bedrock.data.entity.EntityFlag;
 import org.cloudburstmc.protocol.bedrock.data.inventory.transaction.ItemUseTransaction;
 import org.cloudburstmc.protocol.bedrock.packet.AnimatePacket;
 import org.cloudburstmc.protocol.bedrock.packet.PlayerAuthInputPacket;
+import org.cloudburstmc.protocol.bedrock.packet.UpdateAttributesPacket;
 import org.geysermc.geyser.entity.EntitySpectateHelper;
 import org.geysermc.geyser.entity.type.BoatEntity;
 import org.geysermc.geyser.entity.type.Entity;
@@ -47,6 +48,7 @@ import org.geysermc.geyser.entity.type.player.SessionPlayerEntity;
 import org.geysermc.geyser.entity.vehicle.ClientVehicle;
 import org.geysermc.geyser.entity.vehicle.HorseVehicleComponent;
 import org.geysermc.geyser.level.physics.BoundingBox;
+import org.geysermc.geyser.level.physics.CollisionManager;
 import org.geysermc.geyser.network.bedrock.GameProtocol;
 import org.geysermc.geyser.session.GeyserSession;
 import org.geysermc.geyser.translator.protocol.PacketTranslator;
@@ -111,11 +113,21 @@ public final class BedrockPlayerAuthInputTranslator extends PacketTranslator<Pla
                 case START_CRAWLING -> entity.setFlag(EntityFlag.CRAWLING, true);
                 case STOP_CRAWLING -> entity.setFlag(EntityFlag.CRAWLING, false);
                 case START_SPRINTING -> {
-                    if (!leftOverInputData.contains(PlayerAuthInputData.STOP_SPRINTING)) {
-                        if (!session.isSprinting()) {
-                            sprintPacket = new ServerboundPlayerCommandPacket(entity.javaId(), PlayerState.START_SPRINTING);
-                            session.setSprinting(true);
-                        }
+                    if (leftOverInputData.contains(PlayerAuthInputData.STOP_SPRINTING)) {
+                        break;
+                    }
+
+                    CollisionManager collisionManager = session.getCollisionManager();
+                    if (!GameProtocol.is1_21_80orHigher(protocolVersion)
+                            && collisionManager.isPlayerTouchingWater() && !collisionManager.isPlayerInWater()) {
+                        // Older clients can send a spurious sprint start at the water's edge.
+                        UpdateAttributesPacket attributesPacket = new UpdateAttributesPacket();
+                        attributesPacket.setRuntimeEntityId(entity.geyserId());
+                        attributesPacket.getAttributes().addAll(entity.getAttributes().values());
+                        session.sendUpstreamPacket(attributesPacket);
+                    } else if (!session.isSprinting()) {
+                        sprintPacket = new ServerboundPlayerCommandPacket(entity.javaId(), PlayerState.START_SPRINTING);
+                        session.setSprinting(true);
                     }
                 }
                 case STOP_SPRINTING -> {

@@ -30,11 +30,13 @@ import org.cloudburstmc.math.vector.Vector2f;
 import org.cloudburstmc.math.vector.Vector3f;
 import org.cloudburstmc.protocol.bedrock.data.entity.EntityDataTypes;
 import org.cloudburstmc.protocol.bedrock.data.entity.EntityFlag;
+import org.cloudburstmc.protocol.bedrock.packet.AnimatePacket;
 import org.cloudburstmc.protocol.bedrock.packet.MoveEntityAbsolutePacket;
 import org.geysermc.geyser.entity.spawn.EntitySpawnContext;
 import org.geysermc.geyser.entity.vehicle.BoatVehicleComponent;
 import org.geysermc.geyser.entity.vehicle.ClientVehicle;
 import org.geysermc.geyser.entity.vehicle.VehicleComponent;
+import org.geysermc.geyser.network.bedrock.GameProtocol;
 import org.geysermc.geyser.util.InteractionResult;
 import org.geysermc.geyser.util.InteractiveTag;
 import org.geysermc.mcprotocollib.protocol.data.game.entity.metadata.type.BooleanEntityMetadata;
@@ -202,18 +204,35 @@ public class BoatEntity extends Entity implements Tickable, Leashable, ClientVeh
             return;
         }
 
+        boolean usesRowingMetadata = GameProtocol.is1_21_80orHigher(session.protocolVersion());
         if (isPaddlingLeft) {
             paddleTimeLeft += ROWING_SPEED;
-            metadata.put(EntityDataTypes.ROW_TIME_LEFT, paddleTimeLeft);
+            if (usesRowingMetadata) {
+                metadata.put(EntityDataTypes.ROW_TIME_LEFT, paddleTimeLeft);
+            } else {
+                sendRowingAnimation(rower, AnimatePacket.Action.ROW_LEFT, paddleTimeLeft);
+            }
         }
         if (isPaddlingRight) {
             paddleTimeRight += ROWING_SPEED;
-            metadata.put(EntityDataTypes.ROW_TIME_RIGHT, paddleTimeRight);
+            if (usesRowingMetadata) {
+                metadata.put(EntityDataTypes.ROW_TIME_RIGHT, paddleTimeRight);
+            } else {
+                sendRowingAnimation(rower, AnimatePacket.Action.ROW_RIGHT, paddleTimeRight);
+            }
         }
 
-        if (isPaddlingLeft || isPaddlingRight) {
+        if (usesRowingMetadata && (isPaddlingLeft || isPaddlingRight)) {
             updateBedrockMetadata();
         }
+    }
+
+    private void sendRowingAnimation(Entity rower, AnimatePacket.Action action, float rowingTime) {
+        AnimatePacket packet = new AnimatePacket();
+        packet.setRuntimeEntityId(rower.geyserId());
+        packet.setAction(action);
+        packet.setRowingTime(rowingTime);
+        session.sendUpstreamPacket(packet);
     }
 
     @Override
