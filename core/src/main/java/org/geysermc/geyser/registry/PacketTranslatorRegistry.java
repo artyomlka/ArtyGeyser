@@ -26,11 +26,13 @@
 package org.geysermc.geyser.registry;
 
 import io.netty.channel.EventLoop;
+import org.cloudburstmc.protocol.bedrock.packet.PlayerAuthInputPacket;
 import org.cloudburstmc.protocol.bedrock.packet.ServerboundDiagnosticsPacket;
 import org.geysermc.geyser.GeyserImpl;
 import org.geysermc.geyser.erosion.ErosionCancellationException;
 import org.geysermc.geyser.registry.loader.RegistryLoaders;
 import org.geysermc.geyser.session.GeyserSession;
+import org.geysermc.geyser.session.SessionPerformanceTrace;
 import org.geysermc.geyser.text.GeyserLocale;
 import org.geysermc.geyser.translator.protocol.PacketTranslator;
 import org.geysermc.mcprotocollib.protocol.packet.common.clientbound.ClientboundCustomReportDetailsPacket;
@@ -145,7 +147,20 @@ public class PacketTranslatorRegistry<T> extends AbstractMappedRegistry<Class<? 
         PacketTranslator<P> translator = (PacketTranslator<P>) this.mappings.get(clazz);
         if (translator != null) {
             EventLoop eventLoop = session.getTickEventLoop();
-            if (canRunImmediately || !translator.shouldExecuteInEventLoop() || eventLoop.inEventLoop()) {
+            boolean immediate = canRunImmediately || !translator.shouldExecuteInEventLoop() || eventLoop.inEventLoop();
+            SessionPerformanceTrace trace = session.getPerformanceTrace();
+            if (trace != null && packet instanceof PlayerAuthInputPacket input) {
+                long receivedNanos = System.nanoTime();
+                Runnable task = () -> {
+                    trace.playerInput(input.getTick(), receivedNanos);
+                    translate0(session, translator, packet);
+                };
+                if (immediate) {
+                    task.run();
+                } else {
+                    eventLoop.execute(task);
+                }
+            } else if (immediate) {
                 translate0(session, translator, packet);
             } else {
                 eventLoop.execute(() -> translate0(session, translator, packet));

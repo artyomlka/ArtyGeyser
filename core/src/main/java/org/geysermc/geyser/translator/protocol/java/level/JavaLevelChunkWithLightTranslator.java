@@ -50,6 +50,7 @@ import org.geysermc.geyser.level.chunk.bitarray.BitArrayVersion;
 import org.geysermc.geyser.level.chunk.bitarray.SingletonBitArray;
 import org.geysermc.geyser.registry.BlockRegistries;
 import org.geysermc.geyser.session.GeyserSession;
+import org.geysermc.geyser.session.SessionPerformanceTrace;
 import org.geysermc.geyser.registry.java.JavaRegistries;
 import org.geysermc.geyser.translator.level.BiomeTranslator;
 import org.geysermc.geyser.translator.level.block.entity.BedrockChunkWantsBlockEntityTag;
@@ -83,6 +84,8 @@ public class JavaLevelChunkWithLightTranslator extends PacketTranslator<Clientbo
 
     @Override
     public void translate(GeyserSession session, ClientboundLevelChunkWithLightPacket packet) {
+        SessionPerformanceTrace trace = session.getPerformanceTrace();
+        long startedNanos = trace == null ? 0 : System.nanoTime();
         if (session.isSpawned()) {
             ChunkUtils.updateChunkPosition(session, session.getPlayerEntity().position().toInt());
         }
@@ -380,6 +383,9 @@ public class JavaLevelChunkWithLightTranslator extends PacketTranslator<Clientbo
             levelChunkPacket.setChunkZ(packet.getZ());
             levelChunkPacket.setData(byteBuf.retainedSlice());
             levelChunkPacket.setDimension(session.getBedrockDimension().bedrockId());
+            if (trace != null) {
+                trace.chunk(levelChunkPacket, startedNanos, bedrockBlockEntities.size());
+            }
             session.sendUpstreamPacket(levelChunkPacket);
         } catch (IOException e) {
             session.getGeyser().getLogger().error("IO error while encoding chunk", e);

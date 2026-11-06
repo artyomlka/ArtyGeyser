@@ -153,6 +153,9 @@ public class JavaPlayerPositionTranslator extends PacketTranslator<ClientboundPl
 
         // Set the unconfirmed teleport to ensure we send the adjusted Bedrock position in moveAbsolute (see CollisionManager#adjustPositionForBedrock)
         session.setUnconfirmedTeleport(new TeleportCache(session, teleportDestination, deltaMovement, newPitch, newYaw, teleportId, type));
+        if (session.getPerformanceTrace() != null) {
+            session.getPerformanceTrace().teleport("sent", session.getUnconfirmedTeleport(), lastPlayerPosition.distanceSquared(teleportDestination));
+        }
         entity.moveAbsolute(teleportDestination, newYaw, newPitch, false, true);
 
         // Bedrock ignores teleports that are extremely close to the player's original position and orientation, so check if we need to cache the teleport

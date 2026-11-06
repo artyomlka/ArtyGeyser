@@ -212,6 +212,7 @@ public class LoginPacketHandler extends LoggingPacketHandler {
         session.setBlockMappings(BlockRegistries.BLOCKS.forVersion(loginProtocolVersion));
         session.setItemMappings(Registries.ITEMS.forVersion(loginProtocolVersion));
 
+        session.enablePerformanceTrace();
         geyser.getSessionManager().addPendingSession(session);
 
         // Fire SessionInitializeEvent here as we now know the client data

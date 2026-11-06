@@ -848,6 +848,7 @@ public class GeyserSession implements GeyserConnection, GeyserCommandSource, Jav
     private MinecraftProtocol protocol;
 
     private int nanosecondsPerTick = 50000000;
+    private @Nullable SessionPerformanceTrace performanceTrace;
     private float millisecondsPerTick = 50.0f;
     private boolean tickingFrozen = false;
     /**
@@ -1203,7 +1204,7 @@ public class GeyserSession implements GeyserConnection, GeyserCommandSource, Jav
         this.remoteServer = this.geyser.platformType() == PlatformType.STANDALONE ? loginEvent.remoteServer() : remoteServer;
 
         // Start ticking
-        tickThread = tickEventLoop.scheduleAtFixedRate(this::tick, nanosecondsPerTick, nanosecondsPerTick, TimeUnit.NANOSECONDS);
+        scheduleSessionTicks();
 
         ClientSession downstream;
         if (geyser.getBootstrap().getSocketAddress() != null) {
@@ -1353,6 +1354,17 @@ public class GeyserSession implements GeyserConnection, GeyserCommandSource, Jav
         tickRate = MathUtils.clamp(tickRate, 1.0f, 10000.0f);
         millisecondsPerTick = 1000.0f / tickRate;
         nanosecondsPerTick = MathUtils.ceil(1000000000.0f / tickRate);
+        scheduleSessionTicks();
+    }
+
+    public void enablePerformanceTrace() {
+        performanceTrace = SessionPerformanceTrace.attach(this);
+    }
+
+    private void scheduleSessionTicks() {
+        if (performanceTrace != null) {
+            performanceTrace.scheduleTicks(nanosecondsPerTick);
+        }
         tickThread = tickEventLoop.scheduleAtFixedRate(this::tick, nanosecondsPerTick, nanosecondsPerTick, TimeUnit.NANOSECONDS);
     }
 
@@ -1388,6 +1400,9 @@ public class GeyserSession implements GeyserConnection, GeyserCommandSource, Jav
      */
     protected void tick() {
         try {
+            if (performanceTrace != null) {
+                performanceTrace.tick(nanosecondsPerTick);
+            }
             inventoryClicksLeft = ClickPlan.MAX_CLICKS_PER_TICK;
             pistonCache.tick();
 
@@ -2158,6 +2173,9 @@ public class GeyserSession implements GeyserConnection, GeyserCommandSource, Jav
         }
 
         if (unconfirmedTeleport.canConfirm(position)) {
+            if (performanceTrace != null) {
+                performanceTrace.teleport("confirmed", unconfirmedTeleport, position.distanceSquared(unconfirmedTeleport.getAdjustedPosition()));
+            }
             unconfirmedTeleport = null;
             return;
         }
@@ -2165,6 +2183,9 @@ public class GeyserSession implements GeyserConnection, GeyserCommandSource, Jav
         // Resend the teleport every few packets until Bedrock responds
         unconfirmedTeleport.incrementUnconfirmedFor();
         if (unconfirmedTeleport.shouldResend()) {
+            if (performanceTrace != null) {
+                performanceTrace.teleport("resent", unconfirmedTeleport, position.distanceSquared(unconfirmedTeleport.getAdjustedPosition()));
+            }
             unconfirmedTeleport.resetUnconfirmedFor();
             geyser.getLogger().debug("Resending teleport " + unconfirmedTeleport.getTeleportConfirmId());
             getPlayerEntity().moveAbsolute(unconfirmedTeleport.getPosition(),
